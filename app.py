@@ -23,7 +23,7 @@ def init_db():
         df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
     else:
         try:
-            df = pd.read_csv(DATA_FILE)
+            df = pd.read_csv(DATA_FILE).fillna('')
             if not all(col in df.columns for col in ["건축물구조_상태", "온도", "습도"]):
                 df_new = pd.DataFrame(columns=required_cols)
                 df_new.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
@@ -34,7 +34,7 @@ def init_db():
 # 월별 기록 관리 대장 생성
 def generate_monthly_excel(company_name, target_month=None):
     init_db()
-    df_db = pd.read_csv(DATA_FILE)
+    df_db = pd.read_csv(DATA_FILE).fillna('')
     
     if company_name and company_name != 'all' and '업체명' in df_db.columns:
         df_db = df_db[df_db['업체명'] == company_name]
@@ -104,27 +104,27 @@ def generate_monthly_excel(company_name, target_month=None):
             insp_str = getattr(row, '점검자', '')
             
             s1 = getattr(row, '건축물구조_상태', '양호')
-            b1 = getattr(row, '건축물구조_비고', '')
-            v1_text = f"양호 ({b1})" if b1 and pd.notna(b1) and str(b1).strip() != '' and str(b1) != 'nan' else str(s1)
+            b1 = str(getattr(row, '건축물구조_비고', '')).strip()
+            v1_text = f"양호 ({b1})" if b1 and b1 != 'nan' else str(s1)
             
             s2 = getattr(row, '소방환기_상태', '양호')
-            b2 = getattr(row, '소방환기_비고', '')
-            v2_text = f"양호 ({b2})" if b2 and pd.notna(b2) and str(b2).strip() != '' and str(b2) != 'nan' else str(s2)
+            b2 = str(getattr(row, '소방환기_비고', '')).strip()
+            v2_text = f"양호 ({b2})" if b2 and b2 != 'nan' else str(s2)
             
             s3 = getattr(row, '표지저장_상태', '양호')
-            b3 = getattr(row, '표지저장_비고', '')
-            v3_text = f"양호 ({b3})" if b3 and pd.notna(b3) and str(b3).strip() != '' and str(b3) != 'nan' else str(s3)
+            b3 = str(getattr(row, '표지저장_비고', '')).strip()
+            v3_text = f"양호 ({b3})" if b3 and b3 != 'nan' else str(s3)
             
             s4 = getattr(row, '온습도누출_상태', '양호')
-            b4 = getattr(row, '온습도누출_비고', '')
-            v4_text = f"양호 ({b4})" if b4 and pd.notna(b4) and str(b4).strip() != '' and str(b4) != 'nan' else str(s4)
+            b4 = str(getattr(row, '온습도누출_비고', '')).strip()
+            v4_text = f"양호 ({b4})" if b4 and b4 != 'nan' else str(s4)
             
             temp_val = getattr(row, '온도', '')
             humid_val = getattr(row, '습도', '')
             
             remarks_list = []
             for item_name, b_val in [('1번', b1), ('2번', b2), ('3번', b3), ('4번', b4)]:
-                if b_val and pd.notna(b_val) and str(b_val).strip() != '' and str(b_val) != 'nan':
+                if b_val and b_val != 'nan':
                     remarks_list.append(f"{item_name}: {b_val}")
             remarks_str = " / ".join(remarks_list) if remarks_list else "-"
 
@@ -153,7 +153,7 @@ def generate_monthly_excel(company_name, target_month=None):
 # 개별 상세 주간점검표 생성 (기준표 포함)
 def generate_single_excel_by_index(idx):
     init_db()
-    df_db = pd.read_csv(DATA_FILE)
+    df_db = pd.read_csv(DATA_FILE).fillna('')
     
     if idx < 0 or idx >= len(df_db):
         return None
@@ -365,7 +365,7 @@ def submit():
         "습도": humidity
     }])
     
-    df = pd.read_csv(DATA_FILE)
+    df = pd.read_csv(DATA_FILE).fillna('')
     df = pd.concat([df, new_row], ignore_index=True)
     df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
     
@@ -416,7 +416,7 @@ def admin_add():
             "습도": humidity
         }])
         
-        df = pd.read_csv(DATA_FILE)
+        df = pd.read_csv(DATA_FILE).fillna('')
         df = pd.concat([df, new_row], ignore_index=True)
         df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
     except Exception as e:
@@ -431,7 +431,7 @@ def admin_edit():
     init_db()
     try:
         idx = int(request.form.get('index', -1))
-        df = pd.read_csv(DATA_FILE)
+        df = pd.read_csv(DATA_FILE).fillna('')
         
         if 0 <= idx < len(df):
             custom_date = request.form.get('inspection_date')
@@ -465,7 +465,7 @@ def admin_edit():
 @app.route('/admin')
 def admin():
     init_db()
-    df = pd.read_csv(DATA_FILE)
+    df = pd.read_csv(DATA_FILE).fillna('')
     records = []
     for idx, row in df.iterrows():
         r_dict = row.to_dict()
