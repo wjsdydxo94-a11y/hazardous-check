@@ -10,12 +10,23 @@ app = Flask(__name__)
 DATA_FILE = 'inspection_db.csv'
 
 def init_db():
+    required_cols = [
+        "점검일시", "업체명", "점검자", 
+        "건축물구조_상태", "건축물구조_비고", 
+        "소방환기_상태", "소방환기_비고", 
+        "표지저장_상태", "표지저장_비고", 
+        "온습도누출_상태", "온습도누출_비고", 
+        "온도", "습도"
+    ]
     if not os.path.exists(DATA_FILE):
-        df = pd.DataFrame(columns=[
-            "점검일시", "업체명", "점검자", "건축물구조", "소방환기", 
-            "표지저장", "온습도누출", "온도", "습도", "특이사항"
-        ])
+        df = pd.DataFrame(columns=required_cols)
         df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
+    else:
+        df = pd.read_csv(DATA_FILE)
+        # 구버전 컬럼 구조일 경우 최신 구조로 안전하게 리셋 및 마이그레이션
+        if not all(col in df.columns for col in ["건축물구조_상태", "온도", "습도"]):
+            df_new = pd.DataFrame(columns=required_cols)
+            df_new.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
 
 def generate_monthly_excel(company_name):
     init_db()
@@ -117,48 +128,55 @@ def generate_monthly_excel(company_name):
         cell.border = thin_border
 
     def get_status_mark(val):
-        if latest_row is None:
+        if latest_row is None or pd.isna(val):
             return "[   ]"
         val_str = str(val).strip()
-        if any(kw in val_str for kw in ['양호', '정상', '이상없음', '적합']):
+        if any(kw in val_str for kw in ['양호', '정상', '이상없음', '적합', 'O', 'o']):
             return "양호 (O)"
-        else:
+        elif any(kw in val_str for kw in ['정비요함', '불량', 'X', 'x', '조치필요']):
             return "정비요함 (X)"
+        return "[   ]"
 
     items_data = [
         (
             "1. 건축물 구조 및 피뢰설비",
             "• 저장소 외벽, 지붕, 바닥, 출입문에 균열이나 변형이 있는지 육안으로 살핍니다.\n• 건물 최상단에 설치된 피뢰침(피뢰도체)과 건물 외벽을 따라 내려오는 접지선이 끊어지거나 부식되지 않았는지 확인합니다.",
             "• 건물 구조체에 누수나 심한 균열이 없습니다.\n• 피뢰침이 건물의 가장 높은 곳에 단단히 고정되어 있고, 접지선이 땅속까지 끊김 없이 안전하게 연결되어 있습니다.",
-            get_status_mark(latest_row.get('건축물구조', '')) if latest_row is not None else "[   ]"
+            get_status_mark(latest_row.get('건축물구조_상태', '')) if latest_row is not None else "[   ]",
+            str(latest_row.get('건축물구조_비고', '')) if latest_row is not None and pd.notna(latest_row.get('건축물구조_비고')) else ""
         ),
         (
             "2. 소방 및 환기·배출설비",
             "• 비치된 소화기의 압력계 바늘 위치를 확인합니다.\n• 환기팬(배기팬) 스위치를 켜서 정상적으로 회전하는지 확인합니다.",
             "• 소화기 압력계 바늘이 녹색(정상) 영역에 정확히 위치해 있습니다.\n• 환기팬 가동 시 이상 소음 없이 인화성 증기를 밖으로 원활하게 배출합니다.",
-            get_status_mark(latest_row.get('소방환기', '')) if latest_row is not None else "[   ]"
+            get_status_mark(latest_row.get('소방환기_상태', '')) if latest_row is not None else "[   ]",
+            str(latest_row.get('소방환기_비고', '')) if latest_row is not None and pd.notna(latest_row.get('소방환기_비고')) else ""
         ),
         (
             "3. 표지판 및 위험물 저장·취급",
             "• 출입구에 부착된 '위험물 옥내저장소', '화기엄금', '금연' 표지판이 잘 보이는지 확인합니다.\n• 저장소 내부 바닥과 통행로를 둘러봅니다.",
             "• 표지판이 훼손되거나 글씨가 지워지지 않고 선명하게 부착되어 있습니다.\n• 저장소 내부에 위험물 용기 외에 종이박스, 쓰레기 등 가연성 폐기물이 일절 없습니다.",
-            get_status_mark(latest_row.get('표지저장', '')) if latest_row is not None else "[   ]"
+            get_status_mark(latest_row.get('표지저장_상태', '')) if latest_row is not None else "[   ]",
+            str(latest_row.get('표지저장_비고', '')) if latest_row is not None and pd.notna(latest_row.get('표지저장_비고')) else ""
         ),
         (
             "4. 온습도 및 누출·비산 방지",
             "• 저장소 내부에 부착된 온·습도계 수치를 확인합니다.\n• 드럼 및 용기 하단부, 바닥 턱(방유제) 주변을 확인합니다.",
             "• 원료 변질을 유발하는 극단적인 고온·다습을 피해 적정 범위 내로 유지됩니다.\n• 바닥이나 용기 하단에 액체가 흘러내린 흔적(누유, 누수)이나 미세 누출이 전혀 없습니다.",
-            get_status_mark(latest_row.get('온습도누출', '')) if latest_row is not None else "[   ]"
+            get_status_mark(latest_row.get('온습도누출_상태', '')) if latest_row is not None else "[   ]",
+            str(latest_row.get('온습도누출_비고', '')) if latest_row is not None and pd.notna(latest_row.get('온습도누출_비고')) else ""
         )
     ]
 
-    latest_remark = str(latest_row.get('특이사항', '-')) if latest_row is not None and '특이사항' in latest_row else ""
-    latest_temp = str(latest_row.get('온도', '')) if latest_row is not None else ""
-    latest_humid = str(latest_row.get('습도', '')) if latest_row is not None else ""
-    
-    remark_text = latest_remark
-    if latest_temp or latest_humid:
-        remark_text = f"[측정 온습도] 온도: {latest_temp}℃, 습도: {latest_humid}%\n[특이사항] {latest_remark}"
+    latest_temp = ""
+    latest_humid = ""
+    if latest_row is not None:
+        t_val = latest_row.get('온도', '')
+        h_val = latest_row.get('습도', '')
+        if pd.notna(t_val) and str(t_val).strip() != '':
+            latest_temp = str(t_val)
+        if pd.notna(h_val) and str(h_val).strip() != '':
+            latest_humid = str(h_val)
 
     for idx, item in enumerate(items_data, 7):
         ws.row_dimensions[idx].height = 70
@@ -167,7 +185,7 @@ def generate_monthly_excel(company_name):
         c2 = ws.cell(row=idx, column=2, value=item[1])
         c3 = ws.cell(row=idx, column=3, value=item[2])
         c4 = ws.cell(row=idx, column=4, value=item[3])
-        c5 = ws.cell(row=idx, column=5, value=remark_text if idx == 7 else "")
+        c5 = ws.cell(row=idx, column=5, value=item[4])  # 각 항목별 개별 특이사항
 
         for cell in [c1, c2, c3, c4, c5]:
             cell.font = font_body
@@ -211,13 +229,21 @@ def submit():
     init_db()
     company = request.form.get('company', '아로마솔루션')
     inspector = request.form.get('inspector')
-    item1 = request.form.get('item1', '양호')
-    item2 = request.form.get('item2', '양호')
-    item3 = request.form.get('item3', '양호')
-    item4 = request.form.get('item4', '양호')
+    
+    item1_status = request.form.get('item1_status', '양호')
+    item1_remark = request.form.get('item1_remark', '')
+    
+    item2_status = request.form.get('item2_status', '양호')
+    item2_remark = request.form.get('item2_remark', '')
+    
+    item3_status = request.form.get('item3_status', '양호')
+    item3_remark = request.form.get('item3_remark', '')
+    
+    item4_status = request.form.get('item4_status', '양호')
+    item4_remark = request.form.get('item4_remark', '')
+    
     temp = request.form.get('temp')
     humidity = request.form.get('humidity')
-    remarks = request.form.get('remarks', '-')
     
     now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
     
@@ -225,13 +251,16 @@ def submit():
         "점검일시": now,
         "업체명": company,
         "점검자": inspector,
-        "건축물구조": item1,
-        "소방환기": item2,
-        "표지저장": item3,
-        "온습도누출": item4,
+        "건축물구조_상태": item1_status,
+        "건축물구조_비고": item1_remark,
+        "소방환기_상태": item2_status,
+        "소방환기_비고": item2_remark,
+        "표지저장_상태": item3_status,
+        "표지저장_비고": item3_remark,
+        "온습도누출_상태": item4_status,
+        "온습도누출_비고": item4_remark,
         "온도": temp,
-        "습도": humidity,
-        "특이사항": remarks
+        "습도": humidity
     }])
     
     df = pd.read_csv(DATA_FILE)
