@@ -14,7 +14,7 @@
         <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
             <div>
                 <h1 class="text-xl font-bold text-slate-900">위험물 저장소 일일점검 관리 대시보드</h1>
-                <p class="text-xs text-slate-500 mt-0.5">일일 안전점검 내역 통합 조회 시스템</p>
+                <p class="text-xs text-slate-500 mt-0.5">전문 소방 점검표 기준 통합 모니터링 시스템</p>
             </div>
             <div class="flex flex-wrap gap-2.5 items-center">
                 <select id="companySelect" onchange="filterTable()" class="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none">
@@ -37,10 +37,10 @@
                         <th class="py-3 px-3 border-r border-slate-700">점검일시</th>
                         <th class="py-3 px-3 border-r border-slate-700">업체명</th>
                         <th class="py-3 px-3 border-r border-slate-700">점검자</th>
-                        <th class="py-3 px-3 border-r border-slate-700">1. 설비건전성</th>
-                        <th class="py-3 px-3 border-r border-slate-700">2. 누출관리</th>
-                        <th class="py-3 px-3 border-r border-slate-700">3. 방화환경</th>
-                        <th class="py-3 px-3 border-r border-slate-700">4. 종사자교육</th>
+                        <th class="py-3 px-3 border-r border-slate-700">1. 건축물/피뢰</th>
+                        <th class="py-3 px-3 border-r border-slate-700">2. 소방/환기</th>
+                        <th class="py-3 px-3 border-r border-slate-700">3. 표지/저장취급</th>
+                        <th class="py-3 px-3 border-r border-slate-700">4. 온습도/누출</th>
                         <th class="py-3 px-3 border-r border-slate-700">온도(℃)</th>
                         <th class="py-3 px-3 border-r border-slate-700">습도(%)</th>
                         <th class="py-3 px-3">특이사항/조치내용</th>
@@ -53,8 +53,8 @@
                         <td class="py-3 px-3 font-bold text-slate-800">{{ row.get('업체명', '-') }}</td>
                         <td class="py-3 px-3 text-slate-700">{{ row.get('점검자', '') }}</td>
                         
-                        <!-- 1. 설비건전성 -->
-                        {% set v1 = row.get('설비건전성', '') %}
+                        <!-- 1. 건축물구조 -->
+                        {% set v1 = row.get('건축물구조', '') %}
                         <td class="py-3 px-3">
                             {% if '양호' in v1|string or '정상' in v1|string or '이상없음' in v1|string %}
                                 <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
@@ -63,8 +63,8 @@
                             {% endif %}
                         </td>
 
-                        <!-- 2. 누출관리 -->
-                        {% set v2 = row.get('누출관리', '') %}
+                        <!-- 2. 소방환기 -->
+                        {% set v2 = row.get('소방환기', '') %}
                         <td class="py-3 px-3">
                             {% if '양호' in v2|string or '정상' in v2|string or '이상없음' in v2|string %}
                                 <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
@@ -73,8 +73,8 @@
                             {% endif %}
                         </td>
 
-                        <!-- 3. 방화환경 -->
-                        {% set v3 = row.get('방화환경', '') %}
+                        <!-- 3. 표지저장 -->
+                        {% set v3 = row.get('표지저장', '') %}
                         <td class="py-3 px-3">
                             {% if '양호' in v3|string or '정상' in v3|string or '이상없음' in v3|string %}
                                 <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
@@ -83,8 +83,8 @@
                             {% endif %}
                         </td>
 
-                        <!-- 4. 종사자교육 -->
-                        {% set v4 = row.get('종사자교육', '') %}
+                        <!-- 4. 온습도누출 -->
+                        {% set v4 = row.get('온습도누출', '') %}
                         <td class="py-3 px-3">
                             {% if '양호' in v4|string or '정상' in v4|string or '이상없음' in v4|string %}
                                 <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
