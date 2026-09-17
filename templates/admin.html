@@ -47,7 +47,7 @@
                     <td>
                         {% if '이상없음' in val1|string or '정상' in val1|string or '이상 없음' in val1|string %}
                             <span class="check-green">✔ {{ val1 }}</span>
-                        {% elif val1 and val1 != 'nan' %}
+                        {% elif val1 and val1|string != 'nan' %}
                             <span class="check-red">✘ {{ val1 }}</span>
                         {% endif %}
                     </td>
@@ -57,7 +57,7 @@
                     <td>
                         {% if '이상없음' in val2|string or '정상' in val2|string or '이상 없음' in val2|string %}
                             <span class="check-green">✔ {{ val2 }}</span>
-                        {% elif val2 and val2 != 'nan' %}
+                        {% elif val2 and val2|string != 'nan' %}
                             <span class="check-red">✘ {{ val2 }}</span>
                         {% endif %}
                     </td>
@@ -67,17 +67,17 @@
                     <td>
                         {% if '이상없음' in val3|string or '정상' in val3|string or '이상 없음' in val3|string %}
                             <span class="check-green">✔ {{ val3 }}</span>
-                        {% elif val3 and val3 != 'nan' %}
+                        {% elif val3 and val3|string != 'nan' %}
                             <span class="check-red">✘ {{ val3 }}</span>
                         {% endif %}
                     </td>
 
-                    <!-- 누출여부 ('없음' 포함) -->
+                    <!-- 누출여부 -->
                     {% set val4 = row.get('전산마감', '') %}
                     <td>
                         {% if '이상없음' in val4|string or '정상' in val4|string or '이상 없음' in val4|string or '누출 없음' in val4|string or '없음' in val4|string %}
                             <span class="check-green">✔ {{ val4 }}</span>
-                        {% elif val4 and val4 != 'nan' %}
+                        {% elif val4 and val4|string != 'nan' %}
                             <span class="check-red">✘ {{ val4 }}</span>
                         {% endif %}
                     </td>
@@ -85,9 +85,13 @@
                     <td>{{ row.get('온도', '') }}</td>
                     <td>{{ row.get('습도', '') }}</td>
                     
-                    <!-- 특이사항 (nan 제거) -->
+                    <!-- 특이사항 (nan 완벽 차단) -->
                     {% set note = row.get('특이사항', '') %}
-                    <td style="text-align: left;">{% if note and note != 'nan' %}{{ note }}{% endif %}</td>
+                    <td style="text-align: left;">
+                        {% if note and note|string != 'nan' and note|string != 'NaN' and note|string != 'None' and note|string != '' %}
+                            {{ note }}
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
