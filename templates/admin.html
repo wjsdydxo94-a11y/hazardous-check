@@ -54,6 +54,7 @@
                     {% for row in records %}
                     <tr class="hover:bg-slate-50 text-center" 
                         data-index="{{ row.row_index }}"
+                        data-date="{{ row.get('점검일시', '')[:16].replace(' ', 'T') }}"
                         data-company="{{ row.get('업체명', '') }}"
                         data-inspector="{{ row.get('점검자', '') }}"
                         data-i1-status="{{ row.get('건축물구조_상태', '양호') }}"
@@ -136,7 +137,7 @@
                             {{ remarks | join(' / ') if remarks else '-' }}
                         </td>
 
-                        <!-- 수정 및 개별 지침형 엑셀 출력 버튼 -->
+                        <!-- 수정 및 개별 상세 엑셀 출력 버튼 -->
                         <td class="py-3 px-3 space-x-1">
                             <button onclick="openEditModal(this)" class="bg-amber-500 text-white px-2.5 py-1 rounded-lg font-bold hover:bg-amber-600 transition shadow-sm">
                                 ✏️ 수정
@@ -160,6 +161,12 @@
                 <button onclick="closeAddModal()" class="text-white text-xl font-bold px-2">&times;</button>
             </div>
             <form action="/admin_add" method="POST" class="p-6 overflow-y-auto space-y-4 text-xs">
+                <!-- 점검 일시 선택 -->
+                <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100 space-y-1">
+                    <label class="block font-bold text-indigo-900">점검 일시 선택</label>
+                    <input type="datetime-local" name="inspection_date" required class="w-full p-2 bg-white border border-indigo-200 rounded-lg text-slate-800 font-medium">
+                </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-bold text-slate-600 mb-1">업체명</label>
@@ -242,6 +249,13 @@
             </div>
             <form action="/admin_edit" method="POST" class="p-6 overflow-y-auto space-y-4 text-xs">
                 <input type="hidden" id="editIndex" name="index">
+                
+                <!-- 점검 일시 수정 -->
+                <div class="bg-amber-50 p-3 rounded-xl border border-amber-100 space-y-1">
+                    <label class="block font-bold text-amber-900">점검 일시 수정</label>
+                    <input type="datetime-local" id="editDate" name="inspection_date" required class="w-full p-2 bg-white border border-amber-200 rounded-lg text-slate-800 font-medium">
+                </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-bold text-slate-600 mb-1">업체명</label>
@@ -439,6 +453,11 @@
         }
 
         function openAddModal() {
+            // 기본값으로 현재 로컬 날짜/시간 설정
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.querySelector('#addModal input[name="inspection_date"]').value = now.toISOString().slice(0,16);
+
             document.getElementById('addModal').classList.remove('hidden');
             document.getElementById('addModal').classList.add('flex');
         }
@@ -451,6 +470,7 @@
         function openEditModal(btn) {
             const tr = btn.closest('tr');
             document.getElementById('editIndex').value = tr.dataset.index;
+            document.getElementById('editDate').value = tr.dataset.date;
             document.getElementById('editCompany').value = tr.dataset.company;
             document.getElementById('editInspector').value = tr.dataset.inspector;
             document.getElementById('editI1Status').value = tr.dataset.i1Status;
