@@ -4,16 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>제출 완료</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; max-width: 400px; width: 100%; border: 1px solid #e2e8f0; }
+        h2 { color: #16a34a; margin-bottom: 10px; font-size: 22px; }
+        p { color: #475569; font-size: 14px; margin-bottom: 24px; }
+        a { display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; }
+        a:hover { background-color: #1d4ed8; }
+    </style>
 </head>
-<body class="bg-slate-50 flex items-center justify-center min-h-screen">
-    <div class="max-w-sm w-full mx-4 p-6 bg-white shadow-lg rounded-xl text-center border border-slate-200">
-        <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">✓</div>
-        <h1 class="text-lg font-bold text-slate-800 mb-2">점검 완료 및 기록 저장</h1>
-        <p class="text-sm text-slate-600 mb-6">위험물 저장소 일일점검 데이터가 안전하게 시스템 및 엑셀 파일에 저장되었습니다.</p>
-        <a href="/" class="block w-full bg-blue-600 text-white font-semibold py-2.5 rounded-lg hover:bg-blue-700 transition text-sm">
-            추가 점검 작성
-        </a>
+<body>
+    <div class="card">
+        <h2>점검 결과 제출 완료</h2>
+        <p>위험물 저장소 일일점검 결과가 안전하게 기록되었습니다.</p>
+        <a href="/">돌아가기</a>
     </div>
 </body>
 </html>
