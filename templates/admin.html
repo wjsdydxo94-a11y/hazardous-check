@@ -37,10 +37,10 @@
                 <tr>
                     <th>점검일시</th>
                     <th>점검자</th>
-                    <th>소화설비</th>
-                    <th>경보설비</th>
-                    <th>환기·배출</th>
-                    <th>누출여부</th>
+                    <th>1. 용기 상태</th>
+                    <th>2. 환기·배출</th>
+                    <th>3. 소화·경보</th>
+                    <th>4. 게시판/화기</th>
                     <th>온도(℃)</th>
                     <th>습도(%)</th>
                     <th>특이사항/점검사항</th>
@@ -52,40 +52,40 @@
                     <td>{{ row.get('점검일시', '') }}</td>
                     <td>{{ row.get('점검자', '') }}</td>
                     
-                    <!-- 소화설비 -->
+                    <!-- 1. 용기 상태 -->
                     {% set val1 = row.get('용기상태', '') %}
                     <td>
-                        {% if '이상없음' in val1|string or '정상' in val1|string or '이상 없음' in val1|string %}
+                        {% if '양호' in val1|string or '정상' in val1|string or '이상없음' in val1|string or '없음' in val1|string %}
                             <span class="check-green">✔ {{ val1 }}</span>
                         {% elif val1 and val1|string != 'nan' %}
                             <span class="check-red">✘ {{ val1 }}</span>
                         {% endif %}
                     </td>
 
-                    <!-- 경보설비 -->
-                    {% set val2 = row.get('안전설비', '') %}
+                    <!-- 2. 환기·배출 -->
+                    {% set val2 = row.get('환기설비', '') %}
                     <td>
-                        {% if '이상없음' in val2|string or '정상' in val2|string or '이상 없음' in val2|string %}
+                        {% if '양호' in val2|string or '정상' in val2|string or '이상없음' in val2|string or '없음' in val2|string %}
                             <span class="check-green">✔ {{ val2 }}</span>
                         {% elif val2 and val2|string != 'nan' %}
                             <span class="check-red">✘ {{ val2 }}</span>
                         {% endif %}
                     </td>
 
-                    <!-- 환기·배출 -->
-                    {% set val3 = row.get('방재구조', '') %}
+                    <!-- 3. 소화·경보 -->
+                    {% set val3 = row.get('소화설비', '') %}
                     <td>
-                        {% if '이상없음' in val3|string or '정상' in val3|string or '이상 없음' in val3|string %}
+                        {% if '양호' in val3|string or '정상' in val3|string or '이상없음' in val3|string or '없음' in val3|string %}
                             <span class="check-green">✔ {{ val3 }}</span>
                         {% elif val3 and val3|string != 'nan' %}
                             <span class="check-red">✘ {{ val3 }}</span>
                         {% endif %}
                     </td>
 
-                    <!-- 누출여부 -->
-                    {% set val4 = row.get('전산마감', '') %}
+                    <!-- 4. 게시판/화기 -->
+                    {% set val4 = row.get('안전수칙', '') %}
                     <td>
-                        {% if '이상없음' in val4|string or '정상' in val4|string or '이상 없음' in val4|string or '누출 없음' in val4|string or '없음' in val4|string %}
+                        {% if '양호' in val4|string or '정상' in val4|string or '이상없음' in val4|string or '없음' in val4|string or '완료' in val4|string %}
                             <span class="check-green">✔ {{ val4 }}</span>
                         {% elif val4 and val4|string != 'nan' %}
                             <span class="check-red">✘ {{ val4 }}</span>
@@ -117,12 +117,11 @@
             rows.forEach(row => {
                 const dateCell = row.cells[0].textContent.trim();
                 if (dateCell.length >= 7) {
-                    const ym = dateCell.substring(0, 7); // YYYY-MM 추출
+                    const ym = dateCell.substring(0, 7);
                     months.add(ym);
                 }
             });
 
-            // 최신 월이 위로 오도록 정렬
             const sortedMonths = Array.from(months).sort().reverse();
             sortedMonths.forEach(ym => {
                 const opt = document.createElement('option');
@@ -131,7 +130,6 @@
                 monthSelect.appendChild(opt);
             });
 
-            // 현재 연월 자동 선택 (데이터가 존재할 경우)
             const now = new Date();
             const currentYm = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
             if (months.has(currentYm)) {
