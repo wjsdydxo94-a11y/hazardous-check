@@ -12,8 +12,8 @@ DATA_FILE = 'inspection_db.csv'
 def init_db():
     if not os.path.exists(DATA_FILE):
         df = pd.DataFrame(columns=[
-            "점검일시", "업체명", "점검자", "설비건전성", "누출관리", 
-            "방화환경", "종사자교육", "온도", "습도", "특이사항"
+            "점검일시", "업체명", "점검자", "건축물구조", "소방환기", 
+            "표지저장", "온습도누출", "온도", "습도", "특이사항"
         ])
         df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
 
@@ -55,12 +55,12 @@ def generate_monthly_excel(company_name):
 
     # 2. Sub-note
     ws.merge_cells("A2:G2")
-    ws["A2"] = "* 본 점검표는 위험물안전관리법 기준에 의거하여 매일 현장 점검 후 기록관리하는 법정 서식입니다."
+    ws["A2"] = "* 본 점검표는 일진소방(주) 양식 및 위험물안전관리법 기준에 의거하여 매일 현장 점검 후 기록관리하는 법정 서식입니다."
     ws["A2"].font = Font(name="맑은 고딕", size=9, italic=True, color="595959")
     ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
     ws.row_dimensions[2].height = 20
 
-    # 3. Metadata Header Box (안전관리자란 공백 처리하여 수기 작성 가능하도록 함)
+    # 3. Metadata Header Box (안전관리자란 공백 처리하여 수기 작성 가능)
     current_month_str = datetime.now().strftime('%Y년 %m월')
     metadata = [
         ("사업장명", f"주식회사 {company_name}", "점검년월", current_month_str),
@@ -95,13 +95,13 @@ def generate_monthly_excel(company_name):
 
     ws.row_dimensions[5].height = 10
 
-    # 4. Table Headers
+    # 4. Table Headers (일진소방 양식 세부 항목 반영)
     headers = [
         "일자", 
-        "1. 소방/안전설비\n(소화기/환기/경보)", 
-        "2. 시설/누출관리\n(용기외관/누출방지)", 
-        "3. 방화환경/표지\n(금연표지/가연물적치)", 
-        "4. 종사자교육\n(안전수칙/응급연락)", 
+        "1. 건축물구조/피뢰\n(균열/피뢰설비)", 
+        "2. 소방/환기배출\n(소화기/환기팬)", 
+        "3. 표지판/저장취급\n(금연표지/관리상태)", 
+        "4. 온습도/누출방지\n(온습도/누출비산방지)", 
         "점검 결과", 
         "점검자 서명\n(선임자)"
     ]
@@ -142,10 +142,10 @@ def generate_monthly_excel(company_name):
                 else:
                     return "X"
 
-            v1 = format_status(matched_row.get('설비건전성', '양호'))
-            v2 = format_status(matched_row.get('누출관리', '양호'))
-            v3 = format_status(matched_row.get('방화환경', '양호'))
-            v4 = format_status(matched_row.get('종사자교육', '양호'))
+            v1 = format_status(matched_row.get('건축물구조', '양호'))
+            v2 = format_status(matched_row.get('소방환기', '양호'))
+            v3 = format_status(matched_row.get('표지저장', '양호'))
+            v4 = format_status(matched_row.get('온습도누출', '양호'))
             
             if v1 == "O" and v2 == "O" and v3 == "O" and v4 == "O":
                 v_result = "적합 (양호)"
@@ -201,10 +201,10 @@ def submit():
     init_db()
     company = request.form.get('company', '아로마솔루션')
     inspector = request.form.get('inspector')
-    facility = request.form.get('facility', '양호')
-    leak_mgmt = request.form.get('leak_mgmt', '양호')
-    environment = request.form.get('environment', '양호')
-    education = request.form.get('education', '양호')
+    item1 = request.form.get('item1', '양호')
+    item2 = request.form.get('item2', '양호')
+    item3 = request.form.get('item3', '양호')
+    item4 = request.form.get('item4', '양호')
     temp = request.form.get('temp')
     humidity = request.form.get('humidity')
     remarks = request.form.get('remarks', '-')
@@ -215,10 +215,10 @@ def submit():
         "점검일시": now,
         "업체명": company,
         "점검자": inspector,
-        "설비건전성": facility,
-        "누출관리": leak_mgmt,
-        "방화환경": environment,
-        "종사자교육": education,
+        "건축물구조": item1,
+        "소방환기": item2,
+        "표지저장": item3,
+        "온습도누출": item4,
         "온도": temp,
         "습도": humidity,
         "특이사항": remarks
