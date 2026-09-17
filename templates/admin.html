@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>위험물 일일점검 관리 대시보드</title>
+    <title>위험물 저장소 일일점검 관리 대시보드</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style> body { font-family: 'Pretendard', sans-serif; } </style>
@@ -25,6 +25,7 @@
                 <select id="monthSelect" onchange="filterTable()" class="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none">
                     <option value="all">전체 기간 보기</option>
                 </select>
+                <button onclick="openGuideModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition">📋 점검 기준표 및 절차 보기</button>
                 <a href="/download?company=아로마솔루션" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-800 transition">아로마솔루션 엑셀</a>
                 <a href="/download?company=아로마리소스" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition">아로마리소스 엑셀</a>
             </div>
@@ -43,7 +44,8 @@
                         <th class="py-3 px-3 border-r border-slate-700">4. 온습도/누출</th>
                         <th class="py-3 px-3 border-r border-slate-700">온도(℃)</th>
                         <th class="py-3 px-3 border-r border-slate-700">습도(%)</th>
-                        <th class="py-3 px-3">특이사항/조치내용</th>
+                        <th class="py-3 px-3 border-r border-slate-700">특이사항/조치내용</th>
+                        <th class="py-3 px-3">점검 기준표 및 절차</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody" class="divide-y divide-slate-200">
@@ -102,10 +104,90 @@
                                 {{ note }}
                             {% endif %}
                         </td>
+
+                        <!-- 새로운 칸: 기준표 및 절차 확인 버튼 -->
+                        <td class="py-3 px-3">
+                            <button onclick="openGuideModal()" class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded font-bold hover:bg-blue-100 transition border border-blue-200">
+                                🔍 기준표 확인
+                            </button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- 점검 기준표 및 절차 모달 팝업 창 -->
+    <div id="guideModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white max-w-4xl w-full rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h2 class="text-base font-bold">📋 4대 점검 항목별 상세 절차 및 기준표</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">초보자 및 현장 작업자가 숙지해야 할 일일점검 세부 방법 및 정상 판정 기준</p>
+                </div>
+                <button onclick="closeGuideModal()" class="text-slate-400 hover:text-white text-xl font-bold px-2">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4">
+                <table class="w-full text-left border-collapse text-xs border border-slate-200 rounded-xl overflow-hidden">
+                    <thead>
+                        <tr class="bg-slate-800 text-white text-center">
+                            <th class="py-3 px-4 border-r border-slate-700 w-1/4">점검 항목</th>
+                            <th class="py-3 px-4 border-r border-slate-700 w-3/8">구체적인 점검 방법 (How to check)</th>
+                            <th class="py-3 px-4 w-3/8">정상(양호) 판정 기준 (Normal Criteria)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-3.5 px-4 font-bold text-slate-800 bg-slate-50 border-r border-slate-200">1. 건축물 구조 및 피뢰설비</td>
+                            <td class="py-3.5 px-4 text-slate-700 border-r border-slate-200 leading-relaxed">
+                                • 저장소 외벽, 지붕, 바닥, 출입문에 균열이나 변형이 있는지 육안으로 살핍니다.<br>
+                                • 건물 최상단에 설치된 <b>피뢰침(피뢰도체)</b>과 건물 외벽을 따라 내려오는 접지선이 끊어지거나 부식되지 않았는지 확인합니다.
+                            </td>
+                            <td class="py-3.5 px-4 text-slate-700 leading-relaxed">
+                                • 건물 구조체에 누수나 심한 균열이 없습니다.<br>
+                                • 피뢰침이 건물의 가장 높은 곳에 단단히 고정되어 있고, 접지선이 땅속까지 끊김 없이 안전하게 연결되어 있습니다.
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-3.5 px-4 font-bold text-slate-800 bg-slate-50 border-r border-slate-200">2. 소방 및 환기·배출설비</td>
+                            <td class="py-3.5 px-4 text-slate-700 border-r border-slate-200 leading-relaxed">
+                                • 비치된 소화기의 압력계 바늘 위치를 확인합니다.<br>
+                                • 환기팬(배기팬) 스위치를 켜서 정상적으로 회전하는지 확인합니다.
+                            </td>
+                            <td class="py-3.5 px-4 text-slate-700 leading-relaxed">
+                                • 소화기 압력계 바늘이 녹색(정상) 영역에 정확히 위치해 있습니다.<br>
+                                • 환기팬 가동 시 이상 소음 없이 인화성 증기를 밖으로 원활하게 배출합니다.
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-3.5 px-4 font-bold text-slate-800 bg-slate-50 border-r border-slate-200">3. 표지판 및 위험물 저장·취급</td>
+                            <td class="py-3.5 px-4 text-slate-700 border-r border-slate-200 leading-relaxed">
+                                • 출입구에 부착된 '위험물 옥내저장소', '화기엄금', '금연' 표지판이 잘 보이는지 확인합니다.<br>
+                                • 저장소 내부 바닥과 통행로를 둘러봅니다.
+                            </td>
+                            <td class="py-3.5 px-4 text-slate-700 leading-relaxed">
+                                • 표지판이 훼손되거나 글씨가 지워지지 않고 선명하게 부착되어 있습니다.<br>
+                                • 저장소 내부에 위험물 용기 외에 종이박스, 쓰레기 등 가연성 폐기물이 일절 없습니다.
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-3.5 px-4 font-bold text-slate-800 bg-slate-50 border-r border-slate-200">4. 온습도 및 누출·비산 방지</td>
+                            <td class="py-3.5 px-4 text-slate-700 border-r border-slate-200 leading-relaxed">
+                                • 저장소 내부에 부착된 온·습도계 수치를 확인합니다.<br>
+                                • 드럼 및 용기 하단부, 바닥 턱(방유제) 주변을 확인합니다.
+                            </td>
+                            <td class="py-3.5 px-4 text-slate-700 leading-relaxed">
+                                • 원료 변질을 유발하는 극단적인 고온·다습을 피해 적정 범위 내로 유지됩니다.<br>
+                                • 바닥이나 용기 하단에 액체가 흘러내린 흔적(누유, 누수)이나 미세 누출이 전혀 없습니다.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end">
+                <button onclick="closeGuideModal()" class="bg-slate-900 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-slate-800 transition">확인 완료</button>
+            </div>
         </div>
     </div>
 
@@ -147,6 +229,16 @@
                     row.style.display = 'none';
                 }
             });
+        }
+
+        function openGuideModal() {
+            document.getElementById('guideModal').classList.remove('hidden');
+            document.getElementById('guideModal').classList.add('flex');
+        }
+
+        function closeGuideModal() {
+            document.getElementById('guideModal').classList.remove('flex');
+            document.getElementById('guideModal').classList.add('hidden');
         }
     </script>
 </body>
