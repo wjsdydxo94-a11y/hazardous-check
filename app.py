@@ -27,6 +27,7 @@ def init_db():
             df_new = pd.DataFrame(columns=required_cols)
             df_new.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
 
+# 1. 월별 일괄 출력 대장 생성 (주간점검 기준)
 def generate_monthly_excel(company_name, target_month=None):
     init_db()
     df_db = pd.read_csv(DATA_FILE)
@@ -39,7 +40,7 @@ def generate_monthly_excel(company_name, target_month=None):
     
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "월별점검대장"
+    ws.title = "월별주간점검대장"
     ws.views.sheetView[0].showGridLines = True
 
     font_title = Font(name="맑은 고딕", size=16, bold=True)
@@ -63,7 +64,7 @@ def generate_monthly_excel(company_name, target_month=None):
     display_month = target_month if target_month and target_month != 'all' else "전체 기간"
 
     ws.merge_cells("A1:J1")
-    ws["A1"] = f"위험물 저장소 일일점검 관리 대장 ({display_company} / {display_month})"
+    ws["A1"] = f"위험물 저장소/제조소 주간점검 관리 대장 ({display_company} / {display_month})"
     ws["A1"].font = font_title
     ws["A1"].alignment = align_center
     ws.row_dimensions[1].height = 40
@@ -141,10 +142,11 @@ def generate_monthly_excel(company_name, target_month=None):
     for idx, width in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(idx)].width = width
 
-    report_filename = f'위험물점검_관리대장_{display_company}_{display_month.replace(" ", "_")}.xlsx'
+    report_filename = f'위험물주간점검_관리대장_{display_company}_{display_month.replace(" ", "_")}.xlsx'
     wb.save(report_filename)
     return report_filename
 
+# 2. 개별 행 출력 (상세 지침형 주간점검표)
 def generate_single_excel_by_index(idx):
     init_db()
     df_db = pd.read_csv(DATA_FILE)
@@ -158,7 +160,7 @@ def generate_single_excel_by_index(idx):
     
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "위험물일일점검표"
+    ws.title = "위험물주간점검표"
     ws.views.sheetView[0].showGridLines = True
 
     font_title = Font(name="맑은 고딕", size=16, bold=True)
@@ -179,20 +181,20 @@ def generate_single_excel_by_index(idx):
     )
 
     ws.merge_cells("A1:E1")
-    ws["A1"] = f"위험물 저장소 일일점검 항목별 상세 절차 및 기준표 ({company_name})"
+    ws["A1"] = f"위험물 저장소/제조소 주간점검 항목별 상세 절차 및 기준표 ({company_name})"
     ws["A1"].font = font_title
     ws["A1"].alignment = align_center
     ws.row_dimensions[1].height = 40
 
     ws.merge_cells("A2:E2")
-    ws["A2"] = "* 본 점검표는 초보자도 쉽게 이해할 수 있도록 4대 점검 항목의 세부 절차와 정상 기준을 명시하고 즉시 점검 결과를 기록하는 법정 서식입니다."
+    ws["A2"] = "* 본 점검표는 초보자도 쉽게 이해할 수 있도록 4대 점검 항목의 세부 절차와 정상 기준을 명시하고 즉시 점검 결과를 기록하는 법정 주간 서식입니다."
     ws["A2"].font = Font(name="맑은 고딕", size=9, italic=True, color="595959")
     ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
     ws.row_dimensions[2].height = 20
 
     metadata = [
         ("사업장명", f"주식회사 {company_name}", "점검일시", dt_str),
-        ("점검대상", "옥내저장소", "점검자", str(row.get('점검자', '')))
+        ("점검대상", "옥내저장소/제조소", "점검자", str(row.get('점검자', '')))
     ]
 
     for r_idx, meta in enumerate(metadata, 3):
@@ -315,7 +317,7 @@ def generate_single_excel_by_index(idx):
     for idx, width in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(idx)].width = width
 
-    report_filename = f'위험물일일점검표_{company_name}_{dt_str[:10]}.xlsx'
+    report_filename = f'위험물주간점검표_{company_name}_{dt_str[:10]}.xlsx'
     wb.save(report_filename)
     return report_filename
 
@@ -371,7 +373,6 @@ def admin_add():
     company = request.form.get('company', '아로마솔루션')
     inspector = request.form.get('inspector', '관리자')
     
-    # 사용자 선택 날짜 처리
     custom_date = request.form.get('inspection_date')
     if custom_date:
         try:
