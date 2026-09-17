@@ -13,7 +13,7 @@ EXCEL_REPORT = '위험물저장소_일일안전점검표_월간보고.xlsx'
 def init_db():
     if not os.path.exists(DATA_FILE):
         df = pd.DataFrame(columns=[
-            "점검일시", "점검자", "용기상태", "환기설비", 
+            "점검일시", "업체명", "점검자", "용기상태", "환기설비", 
             "소화설비", "안전수칙", "온도", "습도", "특이사항"
         ])
         df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
@@ -93,7 +93,7 @@ def generate_monthly_excel():
 
     ws.row_dimensions[5].height = 10
 
-    # 4. Table Headers (법정 기준 반영)
+    # 4. Table Headers
     headers = [
         "일자", 
         "1. 용기 상태\n(외관/균열/누출)", 
@@ -150,7 +150,10 @@ def generate_monthly_excel():
             else:
                 v_result = "부적합 (이상)"
                 
-            v_signer = str(matched_row.get('점검자', ''))
+            # 서명란에 업체명과 점검자 이름을 함께 표시
+            comp = str(matched_row.get('업체명', ''))
+            insp = str(matched_row.get('점검자', ''))
+            v_signer = f"{comp} / {insp}" if comp else insp
         else:
             v_container = "[   ] 양호   [   ] 이상"
             v_vent = "[   ] 양호   [   ] 이상"
@@ -181,7 +184,7 @@ def generate_monthly_excel():
         for col in range(1, 8):
             ws.cell(row=r, column=col).border = thin_border
 
-    col_widths = [14, 22, 22, 22, 20, 16, 16]
+    col_widths = [14, 22, 22, 22, 20, 16, 22]
     for idx, width in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(idx)].width = width
 
@@ -194,6 +197,7 @@ def index():
 @app.route('/submit', methods=['POST'])
 def submit():
     init_db()
+    company = request.form.get('company', '솔루션 리소스 1업체')
     inspector = request.form.get('inspector')
     container = request.form.get('fire_ext', '양호')
     vent = request.form.get('alarm', '양호')
@@ -207,6 +211,7 @@ def submit():
     
     new_row = pd.DataFrame([{
         "점검일시": now,
+        "업체명": company,
         "점검자": inspector,
         "용기상태": container,
         "환기설비": vent,
