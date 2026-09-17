@@ -12,6 +12,8 @@
         .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .btn { display: inline-block; background-color: #16a34a; color: white; padding: 9px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; border: none; cursor: pointer; }
         .btn:hover { background-color: #15803d; }
+        .btn-solution { background-color: #1f4e78; }
+        .btn-solution:hover { background-color: #16385c; }
         select { padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 14px; background: white; outline: none; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
         th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: center; }
@@ -26,7 +28,7 @@
         <div class="header-bar">
             <h1>위험물 저장소 일일점검 관리 대시보드</h1>
             <div class="actions">
-                <!-- 업체별 필터 추가 -->
+                <!-- 업체별 필터 -->
                 <select id="companySelect" onchange="filterTable()">
                     <option value="all">전체 업체 보기</option>
                     <option value="아로마솔루션">아로마솔루션</option>
@@ -36,7 +38,9 @@
                 <select id="monthSelect" onchange="filterTable()">
                     <option value="all">전체 기간 보기</option>
                 </select>
-                <a href="/download" class="btn">엑셀 다운로드 (.xlsx)</a>
+                <!-- 개별 업체 엑셀 다운로드 버튼 -->
+                <a href="/download?company=아로마솔루션" class="btn btn-solution">아로마솔루션 엑셀</a>
+                <a href="/download?company=아로마리소스" class="btn">아로마리소스 엑셀</a>
             </div>
         </div>
         <table>
