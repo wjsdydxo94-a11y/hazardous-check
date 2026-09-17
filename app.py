@@ -23,17 +23,19 @@ def init_db():
         df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
     else:
         df = pd.read_csv(DATA_FILE)
-        # 구버전 컬럼 구조일 경우 최신 구조로 안전하게 리셋 및 마이그레이션
         if not all(col in df.columns for col in ["건축물구조_상태", "온도", "습도"]):
             df_new = pd.DataFrame(columns=required_cols)
             df_new.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
 
-def generate_monthly_excel(company_name):
+def generate_monthly_excel(company_name, target_month=None):
     init_db()
     df_db = pd.read_csv(DATA_FILE)
     
-    if '업체명' in df_db.columns:
+    if company_name and company_name != 'all' and '업체명' in df_db.columns:
         df_db = df_db[df_db['업체명'] == company_name]
+    
+    if target_month and '점검일시' in df_db.columns:
+        df_db = df_db[df_db['점검일시'].astype(str).str.startswith(target_month)]
     
     latest_row = None
     if not df_db.empty:
@@ -61,9 +63,12 @@ def generate_monthly_excel(company_name):
         bottom=Side(style='thin', color='D9D9D9')
     )
 
+    display_company = company_name if company_name and company_name != 'all' else "통합"
+    display_month = target_month if target_month else datetime.now().strftime('%Y년 %m월')
+
     # 1. Title
     ws.merge_cells("A1:E1")
-    ws["A1"] = f"위험물 저장소 일일점검 항목별 상세 절차 및 기준표 ({company_name})"
+    ws["A1"] = f"위험물 저장소 일일점검 항목별 상세 절차 및 기준표 ({display_company} / {display_month})"
     ws["A1"].font = font_title
     ws["A1"].alignment = align_center
     ws.row_dimensions[1].height = 40
@@ -76,9 +81,8 @@ def generate_monthly_excel(company_name):
     ws.row_dimensions[2].height = 20
 
     # 3. Metadata Header Box
-    current_date_str = datetime.now().strftime('%Y년 %m월 %d일')
     metadata = [
-        ("사업장명", f"주식회사 {company_name}", "점검일자", current_date_str),
+        ("사업장명", f"주식회사 {display_company}", "점검년월", display_month),
         ("점검대상", "옥내저장소", "안전관리자", "")
     ]
 
@@ -185,7 +189,7 @@ def generate_monthly_excel(company_name):
         c2 = ws.cell(row=idx, column=2, value=item[1])
         c3 = ws.cell(row=idx, column=3, value=item[2])
         c4 = ws.cell(row=idx, column=4, value=item[3])
-        c5 = ws.cell(row=idx, column=5, value=item[4])  # 각 항목별 개별 특이사항
+        c5 = ws.cell(row=idx, column=5, value=item[4])
 
         for cell in [c1, c2, c3, c4, c5]:
             cell.font = font_body
@@ -216,7 +220,7 @@ def generate_monthly_excel(company_name):
     for idx, width in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(idx)].width = width
 
-    report_filename = f'위험물일일점검표_상세지침형_{company_name}.xlsx'
+    report_filename = f'위험물일일점검표_{display_company}_{display_month.replace(" ", "_")}.xlsx'
     wb.save(report_filename)
     return report_filename
 
@@ -232,13 +236,10 @@ def submit():
     
     item1_status = request.form.get('item1_status', '양호')
     item1_remark = request.form.get('item1_remark', '')
-    
     item2_status = request.form.get('item2_status', '양호')
     item2_remark = request.form.get('item2_remark', '')
-    
     item3_status = request.form.get('item3_status', '양호')
     item3_remark = request.form.get('item3_remark', '')
-    
     item4_status = request.form.get('item4_status', '양호')
     item4_remark = request.form.get('item4_remark', '')
     
@@ -278,8 +279,9 @@ def admin():
 
 @app.route('/download')
 def download():
-    company = request.args.get('company', '아로마솔루션')
-    report_filename = generate_monthly_excel(company)
+    company = request.args.get('company', 'all')
+    month = request.args.get('month', '')
+    report_filename = generate_monthly_excel(company, month)
     return send_file(report_filename, as_attachment=True)
 
 if __name__ == '__main__':
