@@ -27,7 +27,7 @@ def init_db():
             df_new = pd.DataFrame(columns=required_cols)
             df_new.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
 
-# 1. 월별 일괄 출력 대장 생성 (주간점검 기준)
+# 1. 월별 일괄 출력 대장 생성 (명칭 변경 반영)
 def generate_monthly_excel(company_name, target_month=None):
     init_db()
     df_db = pd.read_csv(DATA_FILE)
@@ -40,7 +40,7 @@ def generate_monthly_excel(company_name, target_month=None):
     
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "월별주간점검대장"
+    ws.title = "월별기록관리대장"
     ws.views.sheetView[0].showGridLines = True
 
     font_title = Font(name="맑은 고딕", size=16, bold=True)
@@ -64,7 +64,7 @@ def generate_monthly_excel(company_name, target_month=None):
     display_month = target_month if target_month and target_month != 'all' else "전체 기간"
 
     ws.merge_cells("A1:J1")
-    ws["A1"] = f"위험물 저장소/제조소 주간점검 관리 대장 ({display_company} / {display_month})"
+    ws["A1"] = f"위험물 저장소/제조소 월별 기록 관리 대장 ({display_company} / {display_month})"
     ws["A1"].font = font_title
     ws["A1"].alignment = align_center
     ws.row_dimensions[1].height = 40
@@ -142,7 +142,7 @@ def generate_monthly_excel(company_name, target_month=None):
     for idx, width in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(idx)].width = width
 
-    report_filename = f'위험물주간점검_관리대장_{display_company}_{display_month.replace(" ", "_")}.xlsx'
+    report_filename = f'위험물저장소_제조소_월별기록관리대장_{display_company}_{display_month.replace(" ", "_")}.xlsx'
     wb.save(report_filename)
     return report_filename
 
