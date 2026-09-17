@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -150,7 +150,6 @@ def generate_monthly_excel():
             else:
                 v_result = "부적합 (이상)"
                 
-            # 서명란에 업체명과 점검자 이름을 함께 표시
             comp = str(matched_row.get('업체명', ''))
             insp = str(matched_row.get('점검자', ''))
             v_signer = f"{comp} / {insp}" if comp else insp
@@ -197,7 +196,7 @@ def index():
 @app.route('/submit', methods=['POST'])
 def submit():
     init_db()
-    company = request.form.get('company', '솔루션 리소스 1업체')
+    company = request.form.get('company', '아로마솔루션')
     inspector = request.form.get('inspector')
     container = request.form.get('fire_ext', '양호')
     vent = request.form.get('alarm', '양호')
@@ -207,7 +206,8 @@ def submit():
     humidity = request.form.get('humidity')
     remarks = request.form.get('remarks', '-')
     
-    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # 한국 표준시(KST)로 정확히 변환 (+9시간 보정)
+    now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
     
     new_row = pd.DataFrame([{
         "점검일시": now,
