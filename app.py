@@ -13,8 +13,8 @@ EXCEL_REPORT = '위험물저장소_일일안전점검표_월간보고.xlsx'
 def init_db():
     if not os.path.exists(DATA_FILE):
         df = pd.DataFrame(columns=[
-            "점검일시", "점검자", "용기상태", "안전설비", 
-            "방재구조", "전산마감", "온도", "습도", "특이사항"
+            "점검일시", "점검자", "용기상태", "환기설비", 
+            "소화설비", "안전수칙", "온도", "습도", "특이사항"
         ])
         df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
 
@@ -93,13 +93,13 @@ def generate_monthly_excel():
 
     ws.row_dimensions[5].height = 10
 
-    # 4. Table Headers
+    # 4. Table Headers (법정 기준 반영)
     headers = [
         "일자", 
         "1. 용기 상태\n(외관/균열/누출)", 
-        "2. 안전 설비\n(배기장치/검지기)", 
-        "3. 방재 구조\n(소화기/화기금지)", 
-        "4. 전산 마감\n(금일 ERP 입력)", 
+        "2. 환기·배출\n(환기팬/검지기)", 
+        "3. 소화·경보\n(소화기/경보기)", 
+        "4. 게시판/화기\n(표지/화기엄금)", 
         "점검 결과", 
         "점검자 서명\n(선임자)"
     ]
@@ -112,14 +112,13 @@ def generate_monthly_excel():
         cell.alignment = align_center
         cell.border = thin_border
 
-    # 5. Populate Days (1 to 31) matching submitted database records if available
+    # 5. Populate Days (1 to 31)
     for day in range(1, 32):
         r_idx = 6 + day
         ws.row_dimensions[r_idx].height = 22
         
         date_prefix = f"{datetime.now().strftime('%m월')} {day:02d}일"
         
-        # Check if record exists for this day in df_db (Precise Date Matching)
         matched_row = None
         for idx, row in df_db.iterrows():
             try:
@@ -134,7 +133,6 @@ def generate_monthly_excel():
                     break
 
         if matched_row is not None:
-            # 정상 판정 키워드(양호, 정상, 이상없음, 없음 등)가 포함되면 [ V ] 양호로 통일
             def format_status(val):
                 val_str = str(val).strip()
                 if any(kw in val_str for kw in ['양호', '정상', '이상없음', '없음', '적합']):
@@ -142,34 +140,26 @@ def generate_monthly_excel():
                 else:
                     return "[ V ] 이상"
 
-            def format_erp(val):
-                val_str = str(val).strip()
-                if any(kw in val_str for kw in ['완료', '정상']):
-                    return "[ V ] 완료"
-                else:
-                    return "[ V ] 미완"
-
-            v_container = format_status(matched_row['용기상태'])
-            v_safety = format_status(matched_row['안전설비'])
-            v_fire = format_status(matched_row['방재구조'])
-            v_erp = format_erp(matched_row['전산마감'])
+            v_container = format_status(matched_row.get('용기상태', '양호'))
+            v_vent = format_status(matched_row.get('환기설비', '양호'))
+            v_fire = format_status(matched_row.get('소화설비', '양호'))
+            v_rule = format_status(matched_row.get('안전수칙', '양호'))
             
-            # 모든 항목이 양호면 적합, 하나라도 이상이면 부적합
-            if "양호" in v_container and "양호" in v_safety and "양호" in v_fire:
+            if "양호" in v_container and "양호" in v_vent and "양호" in v_fire and "양호" in v_rule:
                 v_result = "적합 (양호)"
             else:
                 v_result = "부적합 (이상)"
                 
-            v_signer = str(matched_row['점검자'])
+            v_signer = str(matched_row.get('점검자', ''))
         else:
             v_container = "[   ] 양호   [   ] 이상"
-            v_safety = "[   ] 양호   [   ] 이상"
+            v_vent = "[   ] 양호   [   ] 이상"
             v_fire = "[   ] 양호   [   ] 이상"
-            v_erp = "[   ] 완료   [   ] 미완"
+            v_rule = "[   ] 양호   [   ] 이상"
             v_result = "[   ] 양호   [   ] 이상"
             v_signer = ""
 
-        row_vals = [date_prefix, v_container, v_safety, v_fire, v_erp, v_result, v_signer]
+        row_vals = [date_prefix, v_container, v_vent, v_fire, v_rule, v_result, v_signer]
         
         for col_idx, val in enumerate(row_vals, 1):
             cell = ws.cell(row=r_idx, column=col_idx, value=val)
@@ -191,8 +181,7 @@ def generate_monthly_excel():
         for col in range(1, 8):
             ws.cell(row=r, column=col).border = thin_border
 
-    # Set column widths
-    col_widths = [14, 22, 22, 22, 18, 16, 16]
+    col_widths = [14, 22, 22, 22, 20, 16, 16]
     for idx, width in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(idx)].width = width
 
@@ -207,9 +196,9 @@ def submit():
     init_db()
     inspector = request.form.get('inspector')
     container = request.form.get('fire_ext', '양호')
-    safety = request.form.get('alarm', '양호')
+    vent = request.form.get('alarm', '양호')
     fire = request.form.get('vent', '양호')
-    erp = request.form.get('leak', '완료')
+    rule = request.form.get('leak', '양호')
     temp = request.form.get('temp')
     humidity = request.form.get('humidity')
     remarks = request.form.get('remarks', '-')
@@ -220,9 +209,9 @@ def submit():
         "점검일시": now,
         "점검자": inspector,
         "용기상태": container,
-        "안전설비": safety,
-        "방재구조": fire,
-        "전산마감": erp,
+        "환기설비": vent,
+        "소화설비": fire,
+        "안전수칙": rule,
         "온도": temp,
         "습도": humidity,
         "특이사항": remarks
@@ -232,7 +221,6 @@ def submit():
     df = pd.concat([df, new_row], ignore_index=True)
     df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
     
-    # Automatically update report excel
     generate_monthly_excel()
     
     return render_template('success.html')
