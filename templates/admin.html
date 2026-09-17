@@ -6,7 +6,7 @@
     <title>점검 기록 관리</title>
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
         h1 { font-size: 20px; font-weight: bold; color: #1e293b; margin: 0; }
         .actions { display: flex; gap: 10px; align-items: center; }
@@ -36,6 +36,7 @@
             <thead>
                 <tr>
                     <th>점검일시</th>
+                    <th>업체명</th>
                     <th>점검자</th>
                     <th>1. 용기 상태</th>
                     <th>2. 환기·배출</th>
@@ -50,6 +51,7 @@
                 {% for row in records %}
                 <tr>
                     <td>{{ row.get('점검일시', '') }}</td>
+                    <td><b>{{ row.get('업체명', '-') }}</b></td>
                     <td>{{ row.get('점검자', '') }}</td>
                     
                     <!-- 1. 용기 상태 -->
