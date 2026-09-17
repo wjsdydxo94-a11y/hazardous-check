@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>위험물 저장소 일일점검 관리 대시보드</title>
+    <title>위험물 저장소/제조소 관리 대시보드</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style> body { font-family: 'Pretendard', sans-serif; } </style>
@@ -13,7 +13,7 @@
         
         <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
             <div>
-                <h1 class="text-xl font-bold text-slate-900">위험물 저장소 일일점검 관리 대시보드</h1>
+                <h1 class="text-xl font-bold text-slate-900">위험물 저장소/제조소</h1>
                 <p class="text-xs text-slate-500 mt-0.5">전문 소방 점검표 기준 통합 모니터링 시스템</p>
             </div>
             <div class="flex flex-wrap gap-2.5 items-center">
@@ -137,7 +137,7 @@
                             {{ remarks | join(' / ') if remarks else '-' }}
                         </td>
 
-                        <!-- 수정 및 개별 상세 엑셀 출력 버튼 -->
+                        <!-- 수정 및 개별 상세 주간점검표 출력 버튼 -->
                         <td class="py-3 px-3 space-x-1">
                             <button onclick="openEditModal(this)" class="bg-amber-500 text-white px-2.5 py-1 rounded-lg font-bold hover:bg-amber-600 transition shadow-sm">
                                 ✏️ 수정
@@ -153,15 +153,14 @@
         </div>
     </div>
 
-    <!-- 점검 추가 모달 -->
+    <!-- 주간점검 추가 모달 -->
     <div id="addModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white max-w-lg w-full rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
             <div class="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center">
-                <h2 class="text-base font-bold">➕ 새로운 위험물 일일점검 등록</h2>
+                <h2 class="text-base font-bold">➕ 새로운 위험물 주간점검 등록</h2>
                 <button onclick="closeAddModal()" class="text-white text-xl font-bold px-2">&times;</button>
             </div>
             <form action="/admin_add" method="POST" class="p-6 overflow-y-auto space-y-4 text-xs">
-                <!-- 점검 일시 선택 -->
                 <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100 space-y-1">
                     <label class="block font-bold text-indigo-900">점검 일시 선택</label>
                     <input type="datetime-local" name="inspection_date" required class="w-full p-2 bg-white border border-indigo-200 rounded-lg text-slate-800 font-medium">
@@ -240,17 +239,16 @@
         </div>
     </div>
 
-    <!-- 점검 수정 모달 -->
+    <!-- 주간점검 수정 모달 -->
     <div id="editModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white max-w-lg w-full rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
             <div class="bg-amber-600 text-white px-6 py-4 flex justify-between items-center">
-                <h2 class="text-base font-bold">✏️ 위험물 일일점검 기록 수정</h2>
+                <h2 class="text-base font-bold">✏️ 위험물 주간점검 기록 수정</h2>
                 <button onclick="closeEditModal()" class="text-white text-xl font-bold px-2">&times;</button>
             </div>
             <form action="/admin_edit" method="POST" class="p-6 overflow-y-auto space-y-4 text-xs">
                 <input type="hidden" id="editIndex" name="index">
                 
-                <!-- 점검 일시 수정 -->
                 <div class="bg-amber-50 p-3 rounded-xl border border-amber-100 space-y-1">
                     <label class="block font-bold text-amber-900">점검 일시 수정</label>
                     <input type="datetime-local" id="editDate" name="inspection_date" required class="w-full p-2 bg-white border border-amber-200 rounded-lg text-slate-800 font-medium">
@@ -335,7 +333,7 @@
             <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
                 <div>
                     <h2 class="text-base font-bold">📋 4대 점검 항목별 상세 절차 및 기준표</h2>
-                    <p class="text-xs text-slate-400 mt-0.5">초보자 및 현장 작업자가 숙지해야 할 일일점검 세부 방법 및 정상 판정 기준</p>
+                    <p class="text-xs text-slate-400 mt-0.5">초보자 및 현장 작업자가 숙지해야 할 주간점검 세부 방법 및 정상 판정 기준</p>
                 </div>
                 <button onclick="closeGuideModal()" class="text-slate-400 hover:text-white text-xl font-bold px-2">&times;</button>
             </div>
@@ -453,7 +451,6 @@
         }
 
         function openAddModal() {
-            // 기본값으로 현재 로컬 날짜/시간 설정
             const now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.querySelector('#addModal input[name="inspection_date"]').value = now.toISOString().slice(0,16);
