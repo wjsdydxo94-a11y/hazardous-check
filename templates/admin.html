@@ -7,9 +7,12 @@
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; }
         .container { max-width: 1100px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-        h1 { font-size: 20px; font-weight: bold; color: #1e293b; margin-bottom: 16px; }
-        .btn { display: inline-block; background-color: #16a34a; color: white; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; margin-bottom: 16px; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+        h1 { font-size: 20px; font-weight: bold; color: #1e293b; margin: 0; }
+        .actions { display: flex; gap: 10px; align-items: center; }
+        .btn { display: inline-block; background-color: #16a34a; color: white; padding: 9px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; border: none; cursor: pointer; }
         .btn:hover { background-color: #15803d; }
+        select { padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 14px; background: white; outline: none; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
         th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: center; }
         th { background-color: #1f4e78; color: white; }
@@ -20,8 +23,15 @@
 </head>
 <body>
     <div class="container">
-        <h1>위험물 저장소 일일점검 관리 대시보드</h1>
-        <a href="/download" class="btn">엑셀 파일 다운로드 (.xlsx)</a>
+        <div class="header-bar">
+            <h1>위험물 저장소 일일점검 관리 대시보드</h1>
+            <div class="actions">
+                <select id="monthSelect" onchange="filterTable()">
+                    <option value="all">전체 기간 보기</option>
+                </select>
+                <a href="/download" class="btn">엑셀 다운로드 (.xlsx)</a>
+            </div>
+        </div>
         <table>
             <thead>
                 <tr>
@@ -36,7 +46,7 @@
                     <th>특이사항/점검사항</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="tableBody">
                 {% for row in records %}
                 <tr>
                     <td>{{ row.get('점검일시', '') }}</td>
@@ -85,7 +95,7 @@
                     <td>{{ row.get('온도', '') }}</td>
                     <td>{{ row.get('습도', '') }}</td>
                     
-                    <!-- 특이사항 (nan 완벽 차단) -->
+                    <!-- 특이사항 -->
                     {% set note = row.get('특이사항', '') %}
                     <td style="text-align: left;">
                         {% if note and note|string != 'nan' and note|string != 'NaN' and note|string != 'None' and note|string != '' %}
@@ -97,5 +107,51 @@
             </tbody>
         </table>
     </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const rows = document.querySelectorAll('#tableBody tr');
+            const monthSelect = document.getElementById('monthSelect');
+            const months = new Set();
+
+            rows.forEach(row => {
+                const dateCell = row.cells[0].textContent.trim();
+                if (dateCell.length >= 7) {
+                    const ym = dateCell.substring(0, 7); // YYYY-MM 추출
+                    months.add(ym);
+                }
+            });
+
+            // 최신 월이 위로 오도록 정렬
+            const sortedMonths = Array.from(months).sort().reverse();
+            sortedMonths.forEach(ym => {
+                const opt = document.createElement('option');
+                opt.value = ym;
+                opt.textContent = ym.replace('-', '년 ') + '월';
+                monthSelect.appendChild(opt);
+            });
+
+            // 현재 연월 자동 선택 (데이터가 존재할 경우)
+            const now = new Date();
+            const currentYm = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            if (months.has(currentYm)) {
+                monthSelect.value = currentYm;
+            }
+            filterTable();
+        });
+
+        function filterTable() {
+            const selected = document.getElementById('monthSelect').value;
+            const rows = document.querySelectorAll('#tableBody tr');
+            rows.forEach(row => {
+                const dateCell = row.cells[0].textContent.trim();
+                if (selected === 'all' || dateCell.startsWith(selected)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    </script>
 </body>
 </html>
