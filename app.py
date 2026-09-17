@@ -31,19 +31,17 @@ def generate_monthly_excel(company_name, target_month=None):
     init_db()
     df_db = pd.read_csv(DATA_FILE)
     
+    # 업체 필터 적용
     if company_name and company_name != 'all' and '업체명' in df_db.columns:
         df_db = df_db[df_db['업체명'] == company_name]
     
-    if target_month and '점검일시' in df_db.columns:
+    # 월 필터 적용
+    if target_month and target_month != 'all' and '점검일시' in df_db.columns:
         df_db = df_db[df_db['점검일시'].astype(str).str.startswith(target_month)]
-    
-    latest_row = None
-    if not df_db.empty:
-        latest_row = df_db.iloc[-1]
     
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "위험물일일점검표"
+    ws.title = "월별점검대장"
     ws.views.sheetView[0].showGridLines = True
 
     font_title = Font(name="맑은 고딕", size=16, bold=True)
@@ -63,164 +61,93 @@ def generate_monthly_excel(company_name, target_month=None):
         bottom=Side(style='thin', color='D9D9D9')
     )
 
-    display_company = company_name if company_name and company_name != 'all' else "통합"
-    display_month = target_month if target_month else datetime.now().strftime('%Y년 %m월')
+    display_company = company_name if company_name and company_name != 'all' else "전체 업체"
+    display_month = target_month if target_month and target_month != 'all' else "전체 기간"
 
     # 1. Title
-    ws.merge_cells("A1:E1")
-    ws["A1"] = f"위험물 저장소 일일점검 항목별 상세 절차 및 기준표 ({display_company} / {display_month})"
+    ws.merge_cells("A1:J1")
+    ws["A1"] = f"위험물 저장소 일일점검 관리 대장 ({display_company} / {display_month})"
     ws["A1"].font = font_title
     ws["A1"].alignment = align_center
     ws.row_dimensions[1].height = 40
 
-    # 2. Sub-note
-    ws.merge_cells("A2:E2")
-    ws["A2"] = "* 본 점검표는 초보자도 쉽게 이해할 수 있도록 4대 점검 항목의 세부 절차와 정상 기준을 명시하고 즉시 점검 결과를 기록하는 법정 서식입니다."
-    ws["A2"].font = Font(name="맑은 고딕", size=9, italic=True, color="595959")
-    ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
-    ws.row_dimensions[2].height = 20
+    ws.row_dimensions[2].height = 10
 
-    # 3. Metadata Header Box
-    metadata = [
-        ("사업장명", f"주식회사 {display_company}", "점검년월", display_month),
-        ("점검대상", "옥내저장소", "안전관리자", "")
-    ]
-
-    for r_idx, meta in enumerate(metadata, 3):
-        ws.row_dimensions[r_idx].height = 24
-        ws.merge_cells(start_row=r_idx, start_column=1, end_row=r_idx, end_column=1)
-        ws.cell(row=r_idx, column=1, value=meta[0]).fill = fill_meta
-        ws.cell(row=r_idx, column=1).font = font_body
-        ws.cell(row=r_idx, column=1).alignment = align_center
-        ws.cell(row=r_idx, column=1).border = thin_border
-
-        ws.merge_cells(start_row=r_idx, start_column=2, end_row=r_idx, end_column=2)
-        ws.cell(row=r_idx, column=2, value=meta[1]).alignment = align_center
-        ws.cell(row=r_idx, column=2).font = font_body
-        ws.cell(row=r_idx, column=2).border = thin_border
-
-        ws.cell(row=r_idx, column=3, value="").fill = fill_meta
-        ws.cell(row=r_idx, column=3).border = thin_border
-
-        ws.cell(row=r_idx, column=4, value=meta[2]).fill = fill_meta
-        ws.cell(row=r_idx, column=4).font = font_body
-        ws.cell(row=r_idx, column=4).alignment = align_center
-        ws.cell(row=r_idx, column=4).border = thin_border
-
-        ws.merge_cells(start_row=r_idx, start_column=5, end_row=r_idx, end_column=5)
-        ws.cell(row=r_idx, column=5, value=meta[3]).alignment = align_center
-        ws.cell(row=r_idx, column=5).font = font_body
-        ws.cell(row=r_idx, column=5).border = thin_border
-
-    ws.row_dimensions[5].height = 10
-
-    # 4. Table Headers
+    # 2. Table Headers (대시보드와 동일한 컬럼 구조)
     headers = [
-        "점검 항목", 
-        "구체적인 점검 방법 (How to check)", 
-        "정상(양호) 판정 기준 (Normal Criteria)", 
-        "점검 결과\n(양호/정비요함)", 
-        "특이사항 및 조치내용"
+        "점검일시", "업체명", "점검자", 
+        "1. 건축물/피뢰", "2. 소방/환기", 
+        "3. 표지/저장취급", "4. 온습도/누출", 
+        "온도(℃)", "습도(%)", "특이사항/조치내용"
     ]
 
-    ws.row_dimensions[6].height = 30
+    ws.row_dimensions[3].height = 28
     for col_idx, h in enumerate(headers, 1):
-        cell = ws.cell(row=6, column=col_idx, value=h)
+        cell = ws.cell(row=3, column=col_idx, value=h)
         cell.font = font_header
         cell.fill = fill_header
         cell.alignment = align_center
         cell.border = thin_border
 
-    def get_status_mark(val):
-        if latest_row is None or pd.isna(val):
-            return "[   ]"
-        val_str = str(val).strip()
-        if any(kw in val_str for kw in ['양호', '정상', '이상없음', '적합', 'O', 'o']):
-            return "양호 (O)"
-        elif any(kw in val_str for kw in ['정비요함', '불량', 'X', 'x', '조치필요']):
-            return "정비요함 (X)"
-        return "[   ]"
+    # 3. Populate rows from filtered df_db
+    if df_db.empty:
+        ws.row_dimensions[4].height = 25
+        ws.merge_cells("A4:J4")
+        ws["A4"] = "조건에 해당하는 점검 기록이 없습니다."
+        ws["A4"].alignment = align_center
+        ws["A4"].font = font_body
+    else:
+        for idx, row in enumerate(df_db.itertuples(), start=4):
+            ws.row_dimensions[idx].height = 22
+            
+            dt_str = getattr(row, '점검일시', '')
+            comp_str = getattr(row, '업체명', '')
+            insp_str = getattr(row, '점검자', '')
+            
+            s1 = getattr(row, '건축물구조_상태', '양호')
+            b1 = getattr(row, '건축물구조_비고', '')
+            v1_text = f"양호 ({b1})" if b1 and pd.notna(b1) and str(b1).strip() != '' and str(b1) != 'nan' else str(s1)
+            
+            s2 = getattr(row, '소방환기_상태', '양호')
+            b2 = getattr(row, '소방환기_비고', '')
+            v2_text = f"양호 ({b2})" if b2 and pd.notna(b2) and str(b2).strip() != '' and str(b2) != 'nan' else str(s2)
+            
+            s3 = getattr(row, '표지저장_상태', '양호')
+            b3 = getattr(row, '표지저장_비고', '')
+            v3_text = f"양호 ({b3})" if b3 and pd.notna(b3) and str(b3).strip() != '' and str(b3) != 'nan' else str(s3)
+            
+            s4 = getattr(row, '온습도누출_상태', '양호')
+            b4 = getattr(row, '온습도누출_비고', '')
+            v4_text = f"양호 ({b4})" if b4 and pd.notna(b4) and str(b4).strip() != '' and str(b4) != 'nan' else str(s4)
+            
+            temp_val = getattr(row, '온도', '')
+            humid_val = getattr(row, '습도', '')
+            
+            remarks_list = []
+            for item_name, b_val in [('1번', b1), ('2번', b2), ('3번', b3), ('4번', b4)]:
+                if b_val and pd.notna(b_val) and str(b_val).strip() != '' and str(b_val) != 'nan':
+                    remarks_list.append(f"{item_name}: {b_val}")
+            remarks_str = " / ".join(remarks_list) if remarks_list else "-"
 
-    items_data = [
-        (
-            "1. 건축물 구조 및 피뢰설비",
-            "• 저장소 외벽, 지붕, 바닥, 출입문에 균열이나 변형이 있는지 육안으로 살핍니다.\n• 건물 최상단에 설치된 피뢰침(피뢰도체)과 건물 외벽을 따라 내려오는 접지선이 끊어지거나 부식되지 않았는지 확인합니다.",
-            "• 건물 구조체에 누수나 심한 균열이 없습니다.\n• 피뢰침이 건물의 가장 높은 곳에 단단히 고정되어 있고, 접지선이 땅속까지 끊김 없이 안전하게 연결되어 있습니다.",
-            get_status_mark(latest_row.get('건축물구조_상태', '')) if latest_row is not None else "[   ]",
-            str(latest_row.get('건축물구조_비고', '')) if latest_row is not None and pd.notna(latest_row.get('건축물구조_비고')) else ""
-        ),
-        (
-            "2. 소방 및 환기·배출설비",
-            "• 비치된 소화기의 압력계 바늘 위치를 확인합니다.\n• 환기팬(배기팬) 스위치를 켜서 정상적으로 회전하는지 확인합니다.",
-            "• 소화기 압력계 바늘이 녹색(정상) 영역에 정확히 위치해 있습니다.\n• 환기팬 가동 시 이상 소음 없이 인화성 증기를 밖으로 원활하게 배출합니다.",
-            get_status_mark(latest_row.get('소방환기_상태', '')) if latest_row is not None else "[   ]",
-            str(latest_row.get('소방환기_비고', '')) if latest_row is not None and pd.notna(latest_row.get('소방환기_비고')) else ""
-        ),
-        (
-            "3. 표지판 및 위험물 저장·취급",
-            "• 출입구에 부착된 '위험물 옥내저장소', '화기엄금', '금연' 표지판이 잘 보이는지 확인합니다.\n• 저장소 내부 바닥과 통행로를 둘러봅니다.",
-            "• 표지판이 훼손되거나 글씨가 지워지지 않고 선명하게 부착되어 있습니다.\n• 저장소 내부에 위험물 용기 외에 종이박스, 쓰레기 등 가연성 폐기물이 일절 없습니다.",
-            get_status_mark(latest_row.get('표지저장_상태', '')) if latest_row is not None else "[   ]",
-            str(latest_row.get('표지저장_비고', '')) if latest_row is not None and pd.notna(latest_row.get('표지저장_비고')) else ""
-        ),
-        (
-            "4. 온습도 및 누출·비산 방지",
-            "• 저장소 내부에 부착된 온·습도계 수치를 확인합니다.\n• 드럼 및 용기 하단부, 바닥 턱(방유제) 주변을 확인합니다.",
-            "• 원료 변질을 유발하는 극단적인 고온·다습을 피해 적정 범위 내로 유지됩니다.\n• 바닥이나 용기 하단에 액체가 흘러내린 흔적(누유, 누수)이나 미세 누출이 전혀 없습니다.",
-            get_status_mark(latest_row.get('온습도누출_상태', '')) if latest_row is not None else "[   ]",
-            str(latest_row.get('온습도누출_비고', '')) if latest_row is not None and pd.notna(latest_row.get('온습도누출_비고')) else ""
-        )
-    ]
+            row_vals = [
+                dt_str, comp_str, insp_str, 
+                v1_text, v2_text, v3_text, v4_text, 
+                temp_val, humid_val, remarks_str
+            ]
 
-    latest_temp = ""
-    latest_humid = ""
-    if latest_row is not None:
-        t_val = latest_row.get('온도', '')
-        h_val = latest_row.get('습도', '')
-        if pd.notna(t_val) and str(t_val).strip() != '':
-            latest_temp = str(t_val)
-        if pd.notna(h_val) and str(h_val).strip() != '':
-            latest_humid = str(h_val)
+            for col_idx, val in enumerate(row_vals, 1):
+                cell = ws.cell(row=idx, column=col_idx, value=val)
+                cell.font = font_body
+                cell.border = thin_border
+                cell.alignment = align_center if col_idx <= 9 else align_left
+                if idx % 2 == 1:
+                    cell.fill = PatternFill(start_color="FAFAFA", end_color="FAFAFA", fill_type="solid")
 
-    for idx, item in enumerate(items_data, 7):
-        ws.row_dimensions[idx].height = 70
-        
-        c1 = ws.cell(row=idx, column=1, value=item[0])
-        c2 = ws.cell(row=idx, column=2, value=item[1])
-        c3 = ws.cell(row=idx, column=3, value=item[2])
-        c4 = ws.cell(row=idx, column=4, value=item[3])
-        c5 = ws.cell(row=idx, column=5, value=item[4])
-
-        for cell in [c1, c2, c3, c4, c5]:
-            cell.font = font_body
-            cell.border = thin_border
-            cell.alignment = align_center if cell != c2 and cell != c3 and cell != c5 else align_left
-            if idx % 2 == 1:
-                cell.fill = PatternFill(start_color="FAFAFA", end_color="FAFAFA", fill_type="solid")
-
-    r_env = 11
-    ws.row_dimensions[r_env].height = 30
-    ws.merge_cells(start_row=r_env, start_column=1, end_row=r_env, end_column=3)
-    ws.cell(row=r_env, column=1, value="저장소 환경 측정값 (온도 / 습도)").font = Font(name="맑은 고딕", size=10, bold=True)
-    ws.cell(row=r_env, column=1).alignment = align_center
-    ws.cell(row=r_env, column=1).fill = fill_meta
-    
-    for c in range(1, 4):
-        ws.cell(row=r_env, column=c).border = thin_border
-
-    ws.cell(row=r_env, column=4, value=f"온도: {latest_temp} ℃" if latest_temp else "온도: [   ] ℃").alignment = align_center
-    ws.cell(row=r_env, column=4).font = font_body
-    ws.cell(row=r_env, column=4).border = thin_border
-
-    ws.cell(row=r_env, column=5, value=f"습도: {latest_humid} %" if latest_humid else "습도: [   ] %").alignment = align_center
-    ws.cell(row=r_env, column=5).font = font_body
-    ws.cell(row=r_env, column=5).border = thin_border
-
-    col_widths = [26, 45, 45, 18, 30]
+    col_widths = [20, 16, 14, 18, 18, 18, 18, 12, 12, 35]
     for idx, width in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(idx)].width = width
 
-    report_filename = f'위험물일일점검표_{display_company}_{display_month.replace(" ", "_")}.xlsx'
+    report_filename = f'위험물점검_관리대장_{display_company}_{display_month.replace(" ", "_")}.xlsx'
     wb.save(report_filename)
     return report_filename
 
@@ -280,7 +207,7 @@ def admin():
 @app.route('/download')
 def download():
     company = request.args.get('company', 'all')
-    month = request.args.get('month', '')
+    month = request.args.get('month', 'all')
     report_filename = generate_monthly_excel(company, month)
     return send_file(report_filename, as_attachment=True)
 
