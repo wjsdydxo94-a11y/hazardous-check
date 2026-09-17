@@ -27,7 +27,6 @@ def init_db():
             df_new = pd.DataFrame(columns=required_cols)
             df_new.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
 
-# 1. 월별 일괄 출력 대장 생성
 def generate_monthly_excel(company_name, target_month=None):
     init_db()
     df_db = pd.read_csv(DATA_FILE)
@@ -146,7 +145,6 @@ def generate_monthly_excel(company_name, target_month=None):
     wb.save(report_filename)
     return report_filename
 
-# 2. 특정 행의 상세 지침형 일일점검표 생성 (점검 기준표 및 절차 포함)
 def generate_single_excel_by_index(idx):
     init_db()
     df_db = pd.read_csv(DATA_FILE)
@@ -367,12 +365,22 @@ def submit():
     
     return render_template('success.html')
 
-# 관리자 대시보드에서 직접 점검 추가
 @app.route('/admin_add', methods=['POST'])
 def admin_add():
     init_db()
     company = request.form.get('company', '아로마솔루션')
     inspector = request.form.get('inspector', '관리자')
+    
+    # 사용자 선택 날짜 처리
+    custom_date = request.form.get('inspection_date')
+    if custom_date:
+        try:
+            dt_obj = datetime.strptime(custom_date, '%Y-%m-%dT%H:%M')
+            now = dt_obj.strftime('%Y-%m-%d %H:%M:%S')
+        except:
+            now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
     
     item1_status = request.form.get('item1_status', '양호')
     item1_remark = request.form.get('item1_remark', '')
@@ -385,8 +393,6 @@ def admin_add():
     
     temp = request.form.get('temp', '20')
     humidity = request.form.get('humidity', '50')
-    
-    now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
     
     new_row = pd.DataFrame([{
         "점검일시": now,
@@ -410,7 +416,6 @@ def admin_add():
     
     return redirect(url_for('admin'))
 
-# 관리자 대시보드에서 기존 점검 수정
 @app.route('/admin_edit', methods=['POST'])
 def admin_edit():
     init_db()
@@ -418,6 +423,14 @@ def admin_edit():
     df = pd.read_csv(DATA_FILE)
     
     if 0 <= idx < len(df):
+        custom_date = request.form.get('inspection_date')
+        if custom_date:
+            try:
+                dt_obj = datetime.strptime(custom_date, '%Y-%m-%dT%H:%M')
+                df.loc[idx, '점검일시'] = dt_obj.strftime('%Y-%m-%d %H:%M:%S')
+            except:
+                pass
+
         df.loc[idx, '업체명'] = request.form.get('company', df.loc[idx, '업체명'])
         df.loc[idx, '점검자'] = request.form.get('inspector', df.loc[idx, '점검자'])
         df.loc[idx, '건축물구조_상태'] = request.form.get('item1_status', '양호')
@@ -447,7 +460,7 @@ def admin():
 
 @app.route('/download')
 def download():
-    mode = request.args.get('mode', 'monthly') # monthly or single
+    mode = request.args.get('mode', 'monthly')
     if mode == 'single':
         idx = int(request.args.get('index', 0))
         report_filename = generate_single_excel_by_index(idx)
