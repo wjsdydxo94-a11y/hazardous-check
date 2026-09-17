@@ -3,122 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>점검 기록 관리</title>
-    <style>
-        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-        h1 { font-size: 20px; font-weight: bold; color: #1e293b; margin: 0; }
-        .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .btn { display: inline-block; background-color: #16a34a; color: white; padding: 9px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; border: none; cursor: pointer; }
-        .btn:hover { background-color: #15803d; }
-        .btn-solution { background-color: #1f4e78; }
-        .btn-solution:hover { background-color: #16385c; }
-        select { padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 14px; background: white; outline: none; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
-        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: center; }
-        th { background-color: #1f4e78; color: white; }
-        tr:nth-child(even) { background-color: #f8fafc; }
-        .check-green { color: #16a34a; font-weight: bold; font-size: 14px; }
-        .check-red { color: #dc2626; font-weight: bold; font-size: 14px; }
-    </style>
+    <title>위험물 저장소 정밀점검 관리 대시보드</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Pretendard', sans-serif; } </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header-bar">
-            <h1>위험물 저장소 일일점검 관리 대시보드</h1>
-            <div class="actions">
-                <!-- 업체별 필터 -->
-                <select id="companySelect" onchange="filterTable()">
+<body class="bg-slate-100 p-6">
+    <div class="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
+        
+        <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">위험물 저장소 정밀점검 관리 대시보드</h1>
+                <p class="text-xs text-slate-500 mt-0.5">소방 점검표 기준 일일 안전점검 내역 통합 조회</p>
+            </div>
+            <div class="flex flex-wrap gap-2.5 items-center">
+                <select id="companySelect" onchange="filterTable()" class="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none">
                     <option value="all">전체 업체 보기</option>
                     <option value="아로마솔루션">아로마솔루션</option>
                     <option value="아로마리소스">아로마리소스</option>
                 </select>
-                <!-- 월별 필터 -->
-                <select id="monthSelect" onchange="filterTable()">
+                <select id="monthSelect" onchange="filterTable()" class="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none">
                     <option value="all">전체 기간 보기</option>
                 </select>
-                <!-- 개별 업체 엑셀 다운로드 버튼 -->
-                <a href="/download?company=아로마솔루션" class="btn btn-solution">아로마솔루션 엑셀</a>
-                <a href="/download?company=아로마리소스" class="btn">아로마리소스 엑셀</a>
+                <a href="/download?company=아로마솔루션" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-800 transition">아로마솔루션 엑셀</a>
+                <a href="/download?company=아로마리소스" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition">아로마리소스 엑셀</a>
             </div>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>점검일시</th>
-                    <th>업체명</th>
-                    <th>점검자</th>
-                    <th>1. 용기 상태</th>
-                    <th>2. 환기·배출</th>
-                    <th>3. 소화·경보</th>
-                    <th>4. 게시판/화기</th>
-                    <th>온도(℃)</th>
-                    <th>습도(%)</th>
-                    <th>특이사항/점검사항</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                {% for row in records %}
-                <tr>
-                    <td>{{ row.get('점검일시', '') }}</td>
-                    <td><b>{{ row.get('업체명', '-') }}</b></td>
-                    <td>{{ row.get('점검자', '') }}</td>
-                    
-                    <!-- 1. 용기 상태 -->
-                    {% set val1 = row.get('용기상태', '') %}
-                    <td>
-                        {% if '양호' in val1|string or '정상' in val1|string or '이상없음' in val1|string or '없음' in val1|string %}
-                            <span class="check-green">✔ {{ val1 }}</span>
-                        {% elif val1 and val1|string != 'nan' %}
-                            <span class="check-red">✘ {{ val1 }}</span>
-                        {% endif %}
-                    </td>
 
-                    <!-- 2. 환기·배출 -->
-                    {% set val2 = row.get('환기설비', '') %}
-                    <td>
-                        {% if '양호' in val2|string or '정상' in val2|string or '이상없음' in val2|string or '없음' in val2|string %}
-                            <span class="check-green">✔ {{ val2 }}</span>
-                        {% elif val2 and val2|string != 'nan' %}
-                            <span class="check-red">✘ {{ val2 }}</span>
-                        {% endif %}
-                    </td>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-800 text-white text-center">
+                        <th class="py-3 px-3 border-r border-slate-700">점검일시</th>
+                        <th class="py-3 px-3 border-r border-slate-700">업체명</th>
+                        <th class="py-3 px-3 border-r border-slate-700">점검자</th>
+                        <th class="py-3 px-3 border-r border-slate-700">1. 교육 및 감독</th>
+                        <th class="py-3 px-3 border-r border-slate-700">2. 응급조치/연락</th>
+                        <th class="py-3 px-3 border-r border-slate-700">3. 시설 건전성</th>
+                        <th class="py-3 px-3 border-r border-slate-700">4. 방화환경/표지</th>
+                        <th class="py-3 px-3 border-r border-slate-700">온도(℃)</th>
+                        <th class="py-3 px-3 border-r border-slate-700">습도(%)</th>
+                        <th class="py-3 px-3">특이사항</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-slate-200">
+                    {% for row in records %}
+                    <tr class="hover:bg-slate-50 text-center">
+                        <td class="py-3 px-3 text-slate-600">{{ row.get('점검일시', '') }}</td>
+                        <td class="py-3 px-3 font-bold text-slate-800">{{ row.get('업체명', '-') }}</td>
+                        <td class="py-3 px-3 text-slate-700">{{ row.get('점검자', '') }}</td>
+                        
+                        <!-- 1. 교육 및 감독 -->
+                        {% set v1 = row.get('교육및감독', '') %}
+                        <td class="py-3 px-3">
+                            {% if '양호' in v1|string or '정상' in v1|string or '이상없음' in v1|string %}
+                                <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
+                            {% elif v1 and v1|string != 'nan' %}
+                                <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 불량</span>
+                            {% endif %}
+                        </td>
 
-                    <!-- 3. 소화·경보 -->
-                    {% set val3 = row.get('소화설비', '') %}
-                    <td>
-                        {% if '양호' in val3|string or '정상' in val3|string or '이상없음' in val3|string or '없음' in val3|string %}
-                            <span class="check-green">✔ {{ val3 }}</span>
-                        {% elif val3 and val3|string != 'nan' %}
-                            <span class="check-red">✘ {{ val3 }}</span>
-                        {% endif %}
-                    </td>
+                        <!-- 2. 응급조치 -->
+                        {% set v2 = row.get('응급조치', '') %}
+                        <td class="py-3 px-3">
+                            {% if '양호' in v2|string or '정상' in v2|string or '이상없음' in v2|string %}
+                                <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
+                            {% elif v2 and v2|string != 'nan' %}
+                                <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 불량</span>
+                            {% endif %}
+                        </td>
 
-                    <!-- 4. 게시판/화기 -->
-                    {% set val4 = row.get('안전수칙', '') %}
-                    <td>
-                        {% if '양호' in val4|string or '정상' in val4|string or '이상없음' in val4|string or '없음' in val4|string or '완료' in val4|string %}
-                            <span class="check-green">✔ {{ val4 }}</span>
-                        {% elif val4 and val4|string != 'nan' %}
-                            <span class="check-red">✘ {{ val4 }}</span>
-                        {% endif %}
-                    </td>
+                        <!-- 3. 시설 건전성 -->
+                        {% set v3 = row.get('시설건전성', '') %}
+                        <td class="py-3 px-3">
+                            {% if '양호' in v3|string or '정상' in v3|string or '이상없음' in v3|string %}
+                                <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
+                            {% elif v3 and v3|string != 'nan' %}
+                                <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 불량</span>
+                            {% endif %}
+                        </td>
 
-                    <td>{{ row.get('온도', '') }}</td>
-                    <td>{{ row.get('습도', '') }}</td>
-                    
-                    <!-- 특이사항 -->
-                    {% set note = row.get('특이사항', '') %}
-                    <td style="text-align: left;">
-                        {% if note and note|string != 'nan' and note|string != 'NaN' and note|string != 'None' and note|string != '' %}
-                            {{ note }}
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        <!-- 4. 방화환경 -->
+                        {% set v4 = row.get('방화환경', '') %}
+                        <td class="py-3 px-3">
+                            {% if '양호' in v4|string or '정상' in v4|string or '이상없음' in v4|string %}
+                                <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
+                            {% elif v4 and v4|string != 'nan' %}
+                                <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 불량</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="py-3 px-3 text-slate-600">{{ row.get('온도', '') }}</td>
+                        <td class="py-3 px-3 text-slate-600">{{ row.get('습도', '') }}</td>
+                        
+                        {% set note = row.get('특이사항', '') %}
+                        <td class="py-3 px-3 text-left text-slate-700">
+                            {% if note and note|string != 'nan' and note|string != 'None' and note|string != '' %}
+                                {{ note }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>
@@ -130,13 +118,11 @@
             rows.forEach(row => {
                 const dateCell = row.cells[0].textContent.trim();
                 if (dateCell.length >= 7) {
-                    const ym = dateCell.substring(0, 7);
-                    months.add(ym);
+                    months.add(dateCell.substring(0, 7));
                 }
             });
 
-            const sortedMonths = Array.from(months).sort().reverse();
-            sortedMonths.forEach(ym => {
+            Array.from(months).sort().reverse().forEach(ym => {
                 const opt = document.createElement('option');
                 opt.value = ym;
                 opt.textContent = ym.replace('-', '년 ') + '월';
@@ -145,25 +131,17 @@
 
             const now = new Date();
             const currentYm = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-            if (months.has(currentYm)) {
-                monthSelect.value = currentYm;
-            }
+            if (months.has(currentYm)) monthSelect.value = currentYm;
             filterTable();
         });
 
         function filterTable() {
-            const selectedMonth = document.getElementById('monthSelect').value;
-            const selectedCompany = document.getElementById('companySelect').value;
-            const rows = document.querySelectorAll('#tableBody tr');
-
-            rows.forEach(row => {
-                const dateCell = row.cells[0].textContent.trim();
-                const companyCell = row.cells[1].textContent.trim();
-
-                const matchMonth = (selectedMonth === 'all' || dateCell.startsWith(selectedMonth));
-                const matchCompany = (selectedCompany === 'all' || companyCell.includes(selectedCompany));
-
-                if (matchMonth && matchCompany) {
+            const m = document.getElementById('monthSelect').value;
+            const c = document.getElementById('companySelect').value;
+            document.querySelectorAll('#tableBody tr').forEach(row => {
+                const d = row.cells[0].textContent.trim();
+                const comp = row.cells[1].textContent.trim();
+                if ((m === 'all' || d.startsWith(m)) && (c === 'all' || comp.includes(c))) {
                     row.style.display = '';
                 } else {
                     row.style.display = 'none';
