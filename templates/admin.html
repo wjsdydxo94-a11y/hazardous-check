@@ -471,13 +471,13 @@
             document.getElementById('editCompany').value = tr.dataset.company;
             document.getElementById('editInspector').value = tr.dataset.inspector;
             document.getElementById('editI1Status').value = tr.dataset.i1Status;
-            document.getElementById('editI1Remark').value = tr.dataset.i1Remark;
+            document.getElementById('editI1Remark').value = tr.dataset.i1Remark === 'nan' ? '' : tr.dataset.i1Remark;
             document.getElementById('editI2Status').value = tr.dataset.i2Status;
-            document.getElementById('editI2Remark').value = tr.dataset.i2Remark;
+            document.getElementById('editI2Remark').value = tr.dataset.i2Remark === 'nan' ? '' : tr.dataset.i2Remark;
             document.getElementById('editI3Status').value = tr.dataset.i3Status;
-            document.getElementById('editI3Remark').value = tr.dataset.i3Remark;
+            document.getElementById('editI3Remark').value = tr.dataset.i3Remark === 'nan' ? '' : tr.dataset.i3Remark;
             document.getElementById('editI4Status').value = tr.dataset.i4Status;
-            document.getElementById('editI4Remark').value = tr.dataset.i4Remark;
+            document.getElementById('editI4Remark').value = tr.dataset.i4Remark === 'nan' ? '' : tr.dataset.i4Remark;
             document.getElementById('editTemp').value = tr.dataset.temp;
             document.getElementById('editHumid').value = tr.dataset.humid;
 
