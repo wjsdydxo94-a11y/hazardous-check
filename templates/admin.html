@@ -42,42 +42,42 @@
                     <td>{{ row.get('점검일시', '') }}</td>
                     <td>{{ row.get('점검자', '') }}</td>
                     
-                    <!-- 소화설비 (서버에는 '용기상태'로 저장됨) -->
+                    <!-- 소화설비 -->
                     {% set val1 = row.get('용기상태', '') %}
                     <td>
                         {% if '이상없음' in val1|string or '정상' in val1|string or '이상 없음' in val1|string %}
                             <span class="check-green">✔ {{ val1 }}</span>
-                        {% elif val1 %}
+                        {% elif val1 and val1 != 'nan' %}
                             <span class="check-red">✘ {{ val1 }}</span>
                         {% endif %}
                     </td>
 
-                    <!-- 경보설비 (서버에는 '안전설비'로 저장됨) -->
+                    <!-- 경보설비 -->
                     {% set val2 = row.get('안전설비', '') %}
                     <td>
                         {% if '이상없음' in val2|string or '정상' in val2|string or '이상 없음' in val2|string %}
                             <span class="check-green">✔ {{ val2 }}</span>
-                        {% elif val2 %}
+                        {% elif val2 and val2 != 'nan' %}
                             <span class="check-red">✘ {{ val2 }}</span>
                         {% endif %}
                     </td>
 
-                    <!-- 환기·배출 (서버에는 '방재구조'로 저장됨) -->
+                    <!-- 환기·배출 -->
                     {% set val3 = row.get('방재구조', '') %}
                     <td>
                         {% if '이상없음' in val3|string or '정상' in val3|string or '이상 없음' in val3|string %}
                             <span class="check-green">✔ {{ val3 }}</span>
-                        {% elif val3 %}
+                        {% elif val3 and val3 != 'nan' %}
                             <span class="check-red">✘ {{ val3 }}</span>
                         {% endif %}
                     </td>
 
-                    <!-- 누출여부 (서버에는 '전산마감'으로 저장됨) -->
+                    <!-- 누출여부 ('없음' 포함) -->
                     {% set val4 = row.get('전산마감', '') %}
                     <td>
-                        {% if '이상없음' in val4|string or '정상' in val4|string or '누출 없음' in val4|string %}
+                        {% if '이상없음' in val4|string or '정상' in val4|string or '이상 없음' in val4|string or '누출 없음' in val4|string or '없음' in val4|string %}
                             <span class="check-green">✔ {{ val4 }}</span>
-                        {% elif val4 %}
+                        {% elif val4 and val4 != 'nan' %}
                             <span class="check-red">✘ {{ val4 }}</span>
                         {% endif %}
                     </td>
@@ -85,8 +85,9 @@
                     <td>{{ row.get('온도', '') }}</td>
                     <td>{{ row.get('습도', '') }}</td>
                     
-                    <!-- 특이사항 -->
-                    <td style="text-align: left;">{{ row.get('특이사항', '') }}</td>
+                    <!-- 특이사항 (nan 제거) -->
+                    {% set note = row.get('특이사항', '') %}
+                    <td style="text-align: left;">{% if note and note != 'nan' %}{{ note }}{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
