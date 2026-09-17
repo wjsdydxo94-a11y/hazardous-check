@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>위험물 저장소 점검 관리 대시보드</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 p-6">
+    <div class="max-w-7xl mx-auto bg-white shadow-md rounded-xl p-6 border border-slate-200">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">위험물 저장소 일일점검 관리 대시보드</h1>
+                <p class="text-sm text-slate-500">실시간 누적된 점검 데이터를 조회하고 엑셀 파일로 다운로드할 수 있습니다.</p>
+            </div>
+            <a href="/download" class="bg-emerald-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-emerald-700 transition text-sm flex items-center gap-2">
+                📥 엑셀 파일 다운로드 (.xlsx)
+            </a>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="bg-slate-800 text-white">
+                        <th class="p-3">점검일시</th>
+                        <th class="p-3">점검자</th>
+                        <th class="p-3">소화설비</th>
+                        <th class="p-3">경보설비</th>
+                        <th class="p-3">환기·배출</th>
+                        <th class="p-3">누출여부</th>
+                        <th class="p-3">온도(℃)</th>
+                        <th class="p-3">습도(%)</th>
+                        <th class="p-3">특이사항</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                    {% for row in records %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 text-slate-600">{{ row['점검일시'] }}</td>
+                        <td class="p-3 font-medium text-slate-800">{{ row['점검자'] }}</td>
+                        <td class="p-3 text-slate-600">{{ row['소화설비'] }}</td>
+                        <td class="p-3 text-slate-600">{{ row['경보설비'] }}</td>
+                        <td class="p-3 text-slate-600">{{ row['환기·배출설비'] }}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded text-xs {% if row['누출여부'] == '없음' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700 font-bold{% endif %}">
+                                {{ row['누출여부'] }}
+                            </span>
+                        </td>
+                        <td class="p-3 text-slate-600">{{ row['온도(℃)'] }}</td>
+                        <td class="p-3 text-slate-600">{{ row['습도(%)'] }}</td>
+                        <td class="p-3 text-slate-600">{{ row['특이사항'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
