@@ -13,7 +13,7 @@ def init_db():
     if not os.path.exists(DATA_FILE):
         df = pd.DataFrame(columns=[
             "점검일시", "업체명", "점검자", "설비건전성", "누출관리", 
-            "방화환경", "종사자교육", "온도", "습도", "재고량", "특이사항"
+            "방화환경", "종사자교육", "온도", "습도", "특이사항"
         ])
         df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
 
@@ -26,7 +26,7 @@ def generate_monthly_excel(company_name):
     
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "위험물점검결과표"
+    ws.title = "위험물일일점검표"
     ws.views.sheetView[0].showGridLines = True
 
     font_title = Font(name="맑은 고딕", size=16, bold=True)
@@ -48,23 +48,23 @@ def generate_monthly_excel(company_name):
 
     # 1. Title
     ws.merge_cells("A1:G1")
-    ws["A1"] = "위험물 [점검] 결과표 (전문 안전점검)"
+    ws["A1"] = "위험물 일일점검표"
     ws["A1"].font = font_title
     ws["A1"].alignment = align_center
     ws.row_dimensions[1].height = 40
 
     # 2. Sub-note
     ws.merge_cells("A2:G2")
-    ws["A2"] = "* 본 점검표는 일진소방(주) 양식 및 위험물안전관리법 기준에 의거하여 매일 현장 점검 후 기록관리하는 법정 서식입니다."
+    ws["A2"] = "* 본 점검표는 위험물안전관리법 기준에 의거하여 매일 현장 점검 후 기록관리하는 법정 서식입니다."
     ws["A2"].font = Font(name="맑은 고딕", size=9, italic=True, color="595959")
     ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
     ws.row_dimensions[2].height = 20
 
-    # 3. Metadata Header Box
+    # 3. Metadata Header Box (안전관리자란 공백 처리하여 수기 작성 가능하도록 함)
     current_month_str = datetime.now().strftime('%Y년 %m월')
     metadata = [
         ("사업장명", f"주식회사 {company_name}", "점검년월", current_month_str),
-        ("점검대상", "옥내저장소", "안전관리자", "김순관 / 강원석")
+        ("점검대상", "옥내저장소", "안전관리자", "")
     ]
 
     for r_idx, meta in enumerate(metadata, 3):
@@ -95,7 +95,7 @@ def generate_monthly_excel(company_name):
 
     ws.row_dimensions[5].height = 10
 
-    # 4. Table Headers (일진소방 양식 매칭)
+    # 4. Table Headers
     headers = [
         "일자", 
         "1. 소방/안전설비\n(소화기/환기/경보)", 
@@ -172,17 +172,11 @@ def generate_monthly_excel(company_name):
             if day % 2 == 1:
                 cell.fill = PatternFill(start_color="FAFAFA", end_color="FAFAFA", fill_type="solid")
 
-    # 6. Remarks Section (일진소방 양식의 특이사항 및 보유재고란 반영)
+    # 6. Remarks Section
     r_remark = 39
     ws.row_dimensions[r_remark].height = 25
     ws.merge_cells(start_row=r_remark, start_column=1, end_row=r_remark, end_column=7)
-    
-    # 가장 최근 입력된 재고량 가져오기
-    latest_stock = "0 KG"
-    if not df_db.empty:
-        latest_stock = str(df_db.iloc[-1].get('재고량', '0 KG'))
-    
-    ws.cell(row=r_remark, column=1, value=f"※ 점검지시 및 특이사항: (보유재고: {latest_stock})").font = Font(name="맑은 고딕", size=10, bold=True)
+    ws.cell(row=r_remark, column=1, value="※ 점검지시 및 특이사항 기록").font = Font(name="맑은 고딕", size=10, bold=True)
     ws.cell(row=r_remark, column=1).alignment = Alignment(horizontal="left", vertical="center")
 
     for r in range(40, 44):
@@ -194,7 +188,7 @@ def generate_monthly_excel(company_name):
     for idx, width in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(idx)].width = width
 
-    report_filename = f'위험물점검결과표_{company_name}.xlsx'
+    report_filename = f'위험물일일점검표_{company_name}.xlsx'
     wb.save(report_filename)
     return report_filename
 
@@ -213,7 +207,6 @@ def submit():
     education = request.form.get('education', '양호')
     temp = request.form.get('temp')
     humidity = request.form.get('humidity')
-    stock = request.form.get('stock', '0 KG')
     remarks = request.form.get('remarks', '-')
     
     now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
@@ -228,7 +221,6 @@ def submit():
         "종사자교육": education,
         "온도": temp,
         "습도": humidity,
-        "재고량": stock,
         "특이사항": remarks
     }])
     
