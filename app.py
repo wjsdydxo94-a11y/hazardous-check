@@ -2,15 +2,12 @@ from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
 from datetime import datetime, timedelta
 import os
-import requests
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 app = Flask(__name__)
 DATA_FILE = 'inspection_db.csv'
-
-POWER_AUTOMATE_WEBHOOK_URL = "YOUR_POWER_AUTOMATE_HTTP_URL_HERE"
 
 def init_db():
     if not os.path.exists(DATA_FILE):
@@ -27,7 +24,6 @@ def generate_monthly_excel(company_name):
     if '업체명' in df_db.columns:
         df_db = df_db[df_db['업체명'] == company_name]
     
-    # 가장 최근 제출된 데이터 가져오기
     latest_row = None
     if not df_db.empty:
         latest_row = df_db.iloc[-1]
@@ -68,10 +64,8 @@ def generate_monthly_excel(company_name):
     ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
     ws.row_dimensions[2].height = 20
 
-    # 3. Metadata Header Box (안전관리자란 공백 수기 작성용)
+    # 3. Metadata Header Box
     current_date_str = datetime.now().strftime('%Y년 %m월 %d일')
-    inspector_val = str(latest_row['점검자']) if latest_row is not None and '점검자' in latest_row else ""
-    
     metadata = [
         ("사업장명", f"주식회사 {company_name}", "점검일자", current_date_str),
         ("점검대상", "옥내저장소", "안전관리자", "")
@@ -105,7 +99,7 @@ def generate_monthly_excel(company_name):
 
     ws.row_dimensions[5].height = 10
 
-    # 4. Table Headers (사진 기준표 + 체크란 + 특이사항 란)
+    # 4. Table Headers
     headers = [
         "점검 항목", 
         "구체적인 점검 방법 (How to check)", 
@@ -122,7 +116,6 @@ def generate_monthly_excel(company_name):
         cell.alignment = align_center
         cell.border = thin_border
 
-    # 5. Checklist Data Rows
     def get_status_mark(val):
         if latest_row is None:
             return "[   ]"
@@ -174,8 +167,6 @@ def generate_monthly_excel(company_name):
         c2 = ws.cell(row=idx, column=2, value=item[1])
         c3 = ws.cell(row=idx, column=3, value=item[2])
         c4 = ws.cell(row=idx, column=4, value=item[3])
-        
-        # 첫 번째 행에만 특이사항 입력, 나머지는 빈칸 또는 병합
         c5 = ws.cell(row=idx, column=5, value=remark_text if idx == 7 else "")
 
         for cell in [c1, c2, c3, c4, c5]:
@@ -185,7 +176,6 @@ def generate_monthly_excel(company_name):
             if idx % 2 == 1:
                 cell.fill = PatternFill(start_color="FAFAFA", end_color="FAFAFA", fill_type="solid")
 
-    # 온도/습도 기록용 추가 행
     r_env = 11
     ws.row_dimensions[r_env].height = 30
     ws.merge_cells(start_row=r_env, start_column=1, end_row=r_env, end_column=3)
@@ -247,17 +237,6 @@ def submit():
     df = pd.read_csv(DATA_FILE)
     df = pd.concat([df, new_row], ignore_index=True)
     df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
-    
-    if POWER_AUTOMATE_WEBHOOK_URL != "YOUR_POWER_AUTOMATE_HTTP_URL_HERE":
-        payload = {
-            "점검일시": now, "업체명": company, "점검자": inspector,
-            "건축물구조": item1, "소방환기": item2, "표지저장": item3,
-            "온습도누출": item4, "온도": str(temp), "습도": str(humidity), "특이사항": remarks
-        }
-        try:
-            requests.post(POWER_AUTOMATE_WEBHOOK_URL, json=payload)
-        except Exception as e:
-            print("OneDrive sync failed:", e)
     
     return render_template('success.html')
 
