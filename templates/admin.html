@@ -3,57 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>위험물 저장소 점검 관리 대시보드</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>점검 기록 관리</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        h1 { font-size: 20px; font-weight: bold; color: #1e293b; margin-bottom: 16px; }
+        .btn { display: inline-block; background-color: #16a34a; color: white; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; margin-bottom: 16px; }
+        .btn:hover { background-color: #15803d; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: center; }
+        th { background-color: #1f4e78; color: white; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+    </style>
 </head>
-<body class="bg-slate-100 p-6">
-    <div class="max-w-7xl mx-auto bg-white shadow-md rounded-xl p-6 border border-slate-200">
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-800">위험물 저장소 일일점검 관리 대시보드</h1>
-                <p class="text-sm text-slate-500">실시간 누적된 점검 데이터를 조회하고 엑셀 파일로 다운로드할 수 있습니다.</p>
-            </div>
-            <a href="/download" class="bg-emerald-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-emerald-700 transition text-sm flex items-center gap-2">
-                📥 엑셀 파일 다운로드 (.xlsx)
-            </a>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-sm">
-                <thead>
-                    <tr class="bg-slate-800 text-white">
-                        <th class="p-3">점검일시</th>
-                        <th class="p-3">점검자</th>
-                        <th class="p-3">소화설비</th>
-                        <th class="p-3">경보설비</th>
-                        <th class="p-3">환기·배출</th>
-                        <th class="p-3">누출여부</th>
-                        <th class="p-3">온도(℃)</th>
-                        <th class="p-3">습도(%)</th>
-                        <th class="p-3">특이사항</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200">
-                    {% for row in records %}
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-3 text-slate-600">{{ row['점검일시'] }}</td>
-                        <td class="p-3 font-medium text-slate-800">{{ row['점검자'] }}</td>
-                        <td class="p-3 text-slate-600">{{ row['소화설비'] }}</td>
-                        <td class="p-3 text-slate-600">{{ row['경보설비'] }}</td>
-                        <td class="p-3 text-slate-600">{{ row['환기·배출설비'] }}</td>
-                        <td class="p-3">
-                            <span class="px-2 py-1 rounded text-xs {% if row['누출여부'] == '없음' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700 font-bold{% endif %}">
-                                {{ row['누출여부'] }}
-                            </span>
-                        </td>
-                        <td class="p-3 text-slate-600">{{ row['온도(℃)'] }}</td>
-                        <td class="p-3 text-slate-600">{{ row['습도(%)'] }}</td>
-                        <td class="p-3 text-slate-600">{{ row['특이사항'] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<body>
+    <div class="container">
+        <h1>위험물 저장소 일일점검 관리 대시보드</h1>
+        <a href="/download" class="btn">엑셀 파일 다운로드 (.xlsx)</a>
+        <table>
+            <thead>
+                <tr>
+                    <th>점검일시</th>
+                    <th>점검자</th>
+                    <th>소화설비</th>
+                    <th>경보설비</th>
+                    <th>환기·배출</th>
+                    <th>누출여부</th>
+                    <th>온도(℃)</th>
+                    <th>습도(%)</th>
+                    <th>특이사항</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in records %}
+                <tr>
+                    <td>{{ row.get('점검일시', row.get('timestamp', '')) }}</td>
+                    <td>{{ row.get('점검자', row.get('inspector', '')) }}</td>
+                    <td>{{ row.get('소화설비', row.get('fire_extinguisher', '')) }}</td>
+                    <td>{{ row.get('경보설비', row.get('alarm', '')) }}</td>
+                    <td>{{ row.get('환기·배출', row.get('ventilation', '')) }}</td>
+                    <td>{{ row.get('누출여부', row.get('leak', '')) }}</td>
+                    <td>{{ row.get('온도', row.get('temperature', '')) }}</td>
+                    <td>{{ row.get('습도', row.get('humidity', '')) }}</td>
+                    <td>{{ row.get('특이사항', row.get('note', '')) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </body>
 </html>
