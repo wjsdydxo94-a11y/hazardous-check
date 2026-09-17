@@ -17,17 +17,22 @@
                 <p class="text-xs text-slate-500 mt-0.5">전문 소방 점검표 기준 통합 모니터링 시스템</p>
             </div>
             <div class="flex flex-wrap gap-2.5 items-center">
+                <!-- 업체 선택 필터 -->
                 <select id="companySelect" onchange="filterTable()" class="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none">
                     <option value="all">전체 업체 보기</option>
                     <option value="아로마솔루션">아로마솔루션</option>
                     <option value="아로마리소스">아로마리소스</option>
                 </select>
+                <!-- 월 선택 필터 -->
                 <select id="monthSelect" onchange="filterTable()" class="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none">
                     <option value="all">전체 기간 보기</option>
                 </select>
+                <!-- 기준표 모달 오픈 버튼 -->
                 <button onclick="openGuideModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition">📋 점검 기준표 및 절차 보기</button>
-                <a href="/download?company=아로마솔루션" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-800 transition">아로마솔루션 엑셀</a>
-                <a href="/download?company=아로마리소스" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition">아로마리소스 엑셀</a>
+                <!-- 새로 추가된 월별 일괄 출력 버튼 -->
+                <button onclick="downloadMonthlyReport()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition shadow-sm">
+                    📊 월별 일괄 출력
+                </button>
             </div>
         </div>
 
@@ -106,7 +111,7 @@
                         <td class="py-3 px-3 text-slate-600">{{ row.get('온도', '') }}</td>
                         <td class="py-3 px-3 text-slate-600">{{ row.get('습도', '') }}</td>
                         
-                        <!-- 특이사항 (각 항목별 비고를 통합 표시하거나 대표 특이사항 표시) -->
+                        <!-- 특이사항 -->
                         {% set r1 = row.get('건축물구조_비고', '') %}
                         {% set r2 = row.get('소방환기_비고', '') %}
                         {% set r3 = row.get('표지저장_비고', '') %}
@@ -121,7 +126,7 @@
                             {{ remarks | join(' / ') if remarks else '-' }}
                         </td>
 
-                        <!-- 변경된 '출력' 버튼 -->
+                        <!-- 개별 행 출력 버튼 -->
                         <td class="py-3 px-3">
                             <a href="/download?company={{ row.get('업체명', '아로마솔루션') }}" class="inline-block bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-700 transition shadow-sm">
                                 📥 출력
@@ -255,6 +260,16 @@
         function closeGuideModal() {
             document.getElementById('guideModal').classList.remove('flex');
             document.getElementById('guideModal').classList.add('hidden');
+        }
+
+        function downloadMonthlyReport() {
+            const company = document.getElementById('companySelect').value;
+            const month = document.getElementById('monthSelect').value;
+            let url = `/download?company=${encodeURIComponent(company)}`;
+            if (month && month !== 'all') {
+                url += `&month=${encodeURIComponent(month)}`;
+            }
+            window.location.href = url;
         }
     </script>
 </body>
