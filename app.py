@@ -119,26 +119,54 @@ def generate_monthly_excel():
         
         date_prefix = f"{datetime.now().strftime('%m월')} {day:02d}일"
         
-        # Check if record exists for this day in df_db
+        # Check if record exists for this day in df_db (Precise Date Matching)
         matched_row = None
         for idx, row in df_db.iterrows():
-            if str(day) in str(row['점검일시']) or f"{day:02d}일" in str(row['점검일시']):
-                matched_row = row
-                break
+            try:
+                dt = datetime.strptime(str(row['점검일시']), '%Y-%m-%d %H:%M:%S')
+                current_now = datetime.now()
+                if dt.year == current_now.year and dt.month == current_now.month and dt.day == day:
+                    matched_row = row
+                    break
+            except Exception:
+                if f"-{day:02d} " in str(row['점검일시']) or str(row['점검일시']).endswith(f"-{day:02d}"):
+                    matched_row = row
+                    break
 
         if matched_row is not None:
-            v_container = f"[ V ] {matched_row['용기상태']}" if '양호' in str(matched_row['용기상태']) else "[ V ] 이상"
-            v_safety = f"[ V ] {matched_row['안전설비']}" if '양호' in str(matched_row['안전설비']) else "[ V ] 이상"
-            v_fire = f"[ V ] {matched_row['방재구조']}" if '양호' in str(matched_row['방재구조']) else "[ V ] 이상"
-            v_erp = f"[ V ] {matched_row['전산마감']}" if '완료' in str(matched_row['전산마감']) else "[ V ] 미완"
-            v_result = "적합 (양호)"
+            # 정상 판정 키워드(양호, 정상, 이상없음, 없음 등)가 포함되면 [ V ] 양호로 통일
+            def format_status(val):
+                val_str = str(val).strip()
+                if any(kw in val_str for kw in ['양호', '정상', '이상없음', '없음', '적합']):
+                    return "[ V ] 양호"
+                else:
+                    return "[ V ] 이상"
+
+            def format_erp(val):
+                val_str = str(val).strip()
+                if any(kw in val_str for kw in ['완료', '정상']):
+                    return "[ V ] 완료"
+                else:
+                    return "[ V ] 미완"
+
+            v_container = format_status(matched_row['용기상태'])
+            v_safety = format_status(matched_row['안전설비'])
+            v_fire = format_status(matched_row['방재구조'])
+            v_erp = format_erp(matched_row['전산마감'])
+            
+            # 모든 항목이 양호면 적합, 하나라도 이상이면 부적합
+            if "양호" in v_container and "양호" in v_safety and "양호" in v_fire:
+                v_result = "적합 (양호)"
+            else:
+                v_result = "부적합 (이상)"
+                
             v_signer = str(matched_row['점검자'])
         else:
-            v_container = "[  ] 양호  [  ] 이상"
-            v_safety = "[  ] 양호  [  ] 이상"
-            v_fire = "[  ] 양호  [  ] 이상"
-            v_erp = "[  ] 완료  [  ] 미완"
-            v_result = "[  ] 양호  [  ] 이상"
+            v_container = "[   ] 양호   [   ] 이상"
+            v_safety = "[   ] 양호   [   ] 이상"
+            v_fire = "[   ] 양호   [   ] 이상"
+            v_erp = "[   ] 완료   [   ] 미완"
+            v_result = "[   ] 양호   [   ] 이상"
             v_signer = ""
 
         row_vals = [date_prefix, v_container, v_safety, v_fire, v_erp, v_result, v_signer]
