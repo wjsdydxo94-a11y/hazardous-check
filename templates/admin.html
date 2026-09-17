@@ -45,7 +45,7 @@
                         <th class="py-3 px-3 border-r border-slate-700">온도(℃)</th>
                         <th class="py-3 px-3 border-r border-slate-700">습도(%)</th>
                         <th class="py-3 px-3 border-r border-slate-700">특이사항/조치내용</th>
-                        <th class="py-3 px-3">점검 기준표 및 절차</th>
+                        <th class="py-3 px-3">엑셀 출력</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody" class="divide-y divide-slate-200">
@@ -55,61 +55,77 @@
                         <td class="py-3 px-3 font-bold text-slate-800">{{ row.get('업체명', '-') }}</td>
                         <td class="py-3 px-3 text-slate-700">{{ row.get('점검자', '') }}</td>
                         
-                        <!-- 1. 건축물구조 -->
-                        {% set v1 = row.get('건축물구조', '') %}
+                        <!-- 1. 건축물구조_상태 -->
+                        {% set v1 = row.get('건축물구조_상태', '') %}
                         <td class="py-3 px-3">
-                            {% if '양호' in v1|string or '정상' in v1|string or '이상없음' in v1|string %}
+                            {% if '양호' in v1|string or '정상' in v1|string or '이상없음' in v1|string or 'O' in v1|string %}
                                 <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
-                            {% elif v1 and v1|string != 'nan' %}
+                            {% elif v1 and v1|string != 'nan' and v1|string != '' %}
                                 <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 정비요함</span>
+                            {% else %}
+                                <span class="text-slate-400">-</span>
                             {% endif %}
                         </td>
 
-                        <!-- 2. 소방환기 -->
-                        {% set v2 = row.get('소방환기', '') %}
+                        <!-- 2. 소방환기_상태 -->
+                        {% set v2 = row.get('소방환기_상태', '') %}
                         <td class="py-3 px-3">
-                            {% if '양호' in v2|string or '정상' in v2|string or '이상없음' in v2|string %}
+                            {% if '양호' in v2|string or '정상' in v2|string or '이상없음' in v2|string or 'O' in v2|string %}
                                 <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
-                            {% elif v2 and v2|string != 'nan' %}
+                            {% elif v2 and v2|string != 'nan' and v2|string != '' %}
                                 <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 정비요함</span>
+                            {% else %}
+                                <span class="text-slate-400">-</span>
                             {% endif %}
                         </td>
 
-                        <!-- 3. 표지저장 -->
-                        {% set v3 = row.get('표지저장', '') %}
+                        <!-- 3. 표지저장_상태 -->
+                        {% set v3 = row.get('표지저장_상태', '') %}
                         <td class="py-3 px-3">
-                            {% if '양호' in v3|string or '정상' in v3|string or '이상없음' in v3|string %}
+                            {% if '양호' in v3|string or '정상' in v3|string or '이상없음' in v3|string or 'O' in v3|string %}
                                 <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
-                            {% elif v3 and v3|string != 'nan' %}
+                            {% elif v3 and v3|string != 'nan' and v3|string != '' %}
                                 <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 정비요함</span>
+                            {% else %}
+                                <span class="text-slate-400">-</span>
                             {% endif %}
                         </td>
 
-                        <!-- 4. 온습도누출 -->
-                        {% set v4 = row.get('온습도누출', '') %}
+                        <!-- 4. 온습도누출_상태 -->
+                        {% set v4 = row.get('온습도누출_상태', '') %}
                         <td class="py-3 px-3">
-                            {% if '양호' in v4|string or '정상' in v4|string or '이상없음' in v4|string %}
+                            {% if '양호' in v4|string or '정상' in v4|string or '이상없음' in v4|string or 'O' in v4|string %}
                                 <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
-                            {% elif v4 and v4|string != 'nan' %}
+                            {% elif v4 and v4|string != 'nan' and v4|string != '' %}
                                 <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 정비요함</span>
+                            {% else %}
+                                <span class="text-slate-400">-</span>
                             {% endif %}
                         </td>
 
                         <td class="py-3 px-3 text-slate-600">{{ row.get('온도', '') }}</td>
                         <td class="py-3 px-3 text-slate-600">{{ row.get('습도', '') }}</td>
                         
-                        {% set note = row.get('특이사항', '') %}
+                        <!-- 특이사항 (각 항목별 비고를 통합 표시하거나 대표 특이사항 표시) -->
+                        {% set r1 = row.get('건축물구조_비고', '') %}
+                        {% set r2 = row.get('소방환기_비고', '') %}
+                        {% set r3 = row.get('표지저장_비고', '') %}
+                        {% set r4 = row.get('온습도누출_비고', '') %}
                         <td class="py-3 px-3 text-left text-slate-700">
-                            {% if note and note|string != 'nan' and note|string != 'None' and note|string != '' %}
-                                {{ note }}
-                            {% endif %}
+                            {% set remarks = [] %}
+                            {% if r1 and r1|string != 'nan' and r1|string != 'None' and r1|string != '' %}{% set _ = remarks.append('1번: ' ~ r1) %}{% endif %}
+                            {% if r2 and r2|string != 'nan' and r2|string != 'None' and r2|string != '' %}{% set _ = remarks.append('2번: ' ~ r2) %}{% endif %}
+                            {% if r3 and r3|string != 'nan' and r3|string != 'None' and r3|string != '' %}{% set _ = remarks.append('3번: ' ~ r3) %}{% endif %}
+                            {% if r4 and r4|string != 'nan' and r4|string != 'None' and r4|string != '' %}{% set _ = remarks.append('4번: ' ~ r4) %}{% endif %}
+                            
+                            {{ remarks | join(' / ') if remarks else '-' }}
                         </td>
 
-                        <!-- 새로운 칸: 기준표 및 절차 확인 버튼 -->
+                        <!-- 변경된 '출력' 버튼 -->
                         <td class="py-3 px-3">
-                            <button onclick="openGuideModal()" class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded font-bold hover:bg-blue-100 transition border border-blue-200">
-                                🔍 기준표 확인
-                            </button>
+                            <a href="/download?company={{ row.get('업체명', '아로마솔루션') }}" class="inline-block bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-700 transition shadow-sm">
+                                📥 출력
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
