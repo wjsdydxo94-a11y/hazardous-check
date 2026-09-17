@@ -8,7 +8,6 @@ from openpyxl.utils import get_column_letter
 
 app = Flask(__name__)
 DATA_FILE = 'inspection_db.csv'
-EXCEL_REPORT = '위험물저장소_일일안전점검표_월간보고.xlsx'
 
 def init_db():
     if not os.path.exists(DATA_FILE):
@@ -18,9 +17,13 @@ def init_db():
         ])
         df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
 
-def generate_monthly_excel():
+def generate_monthly_excel(company_name):
     init_db()
     df_db = pd.read_csv(DATA_FILE)
+    
+    # 해당 업체의 데이터만 필터링
+    if '업체명' in df_db.columns:
+        df_db = df_db[df_db['업체명'] == company_name]
     
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -58,11 +61,11 @@ def generate_monthly_excel():
     ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
     ws.row_dimensions[2].height = 20
 
-    # 3. Metadata Header Box
+    # 3. Metadata Header Box (사업장명 동적 변경 및 점검자 공백 처리)
     current_month_str = datetime.now().strftime('%Y년 %m월')
     metadata = [
-        ("사업장명", "주식회사 아로마리소스", "점검년월", current_month_str),
-        ("점검대상", "옥내저장소", "점검자", "전용태 외")
+        ("사업장명", f"주식회사 {company_name}", "점검년월", current_month_str),
+        ("점검대상", "옥내저장소", "점검자", "")
     ]
 
     for r_idx, meta in enumerate(metadata, 3):
@@ -150,9 +153,8 @@ def generate_monthly_excel():
             else:
                 v_result = "부적합 (이상)"
                 
-            comp = str(matched_row.get('업체명', ''))
             insp = str(matched_row.get('점검자', ''))
-            v_signer = f"{comp} / {insp}" if comp else insp
+            v_signer = f"{company_name} / {insp}" if insp else company_name
         else:
             v_container = "[   ] 양호   [   ] 이상"
             v_vent = "[   ] 양호   [   ] 이상"
@@ -187,7 +189,9 @@ def generate_monthly_excel():
     for idx, width in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(idx)].width = width
 
-    wb.save(EXCEL_REPORT)
+    report_filename = f'위험물저장소_일일안전점검표_{company_name}.xlsx'
+    wb.save(report_filename)
+    return report_filename
 
 @app.route('/')
 def index():
@@ -206,7 +210,6 @@ def submit():
     humidity = request.form.get('humidity')
     remarks = request.form.get('remarks', '-')
     
-    # 한국 표준시(KST)로 정확히 변환 (+9시간 보정)
     now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
     
     new_row = pd.DataFrame([{
@@ -226,8 +229,6 @@ def submit():
     df = pd.concat([df, new_row], ignore_index=True)
     df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
     
-    generate_monthly_excel()
-    
     return render_template('success.html')
 
 @app.route('/admin')
@@ -239,8 +240,9 @@ def admin():
 
 @app.route('/download')
 def download():
-    generate_monthly_excel()
-    return send_file(EXCEL_REPORT, as_attachment=True)
+    company = request.args.get('company', '아로마솔루션')
+    report_filename = generate_monthly_excel(company)
+    return send_file(report_filename, as_attachment=True)
 
 if __name__ == '__main__':
     init_db()
