@@ -22,12 +22,16 @@ def init_db():
         df = pd.DataFrame(columns=required_cols)
         df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
     else:
-        df = pd.read_csv(DATA_FILE)
-        if not all(col in df.columns for col in ["건축물구조_상태", "온도", "습도"]):
-            df_new = pd.DataFrame(columns=required_cols)
-            df_new.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
+        try:
+            df = pd.read_csv(DATA_FILE)
+            if not all(col in df.columns for col in ["건축물구조_상태", "온도", "습도"]):
+                df_new = pd.DataFrame(columns=required_cols)
+                df_new.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
+        except Exception:
+            df = pd.DataFrame(columns=required_cols)
+            df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
 
-# 1. 월별 일괄 출력 대장 생성 (명칭 변경 반영)
+# 월별 기록 관리 대장 생성
 def generate_monthly_excel(company_name, target_month=None):
     init_db()
     df_db = pd.read_csv(DATA_FILE)
@@ -146,7 +150,7 @@ def generate_monthly_excel(company_name, target_month=None):
     wb.save(report_filename)
     return report_filename
 
-# 2. 개별 행 출력 (상세 지침형 주간점검표)
+# 개별 상세 주간점검표 생성 (기준표 포함)
 def generate_single_excel_by_index(idx):
     init_db()
     df_db = pd.read_csv(DATA_FILE)
@@ -370,81 +374,91 @@ def submit():
 @app.route('/admin_add', methods=['POST'])
 def admin_add():
     init_db()
-    company = request.form.get('company', '아로마솔루션')
-    inspector = request.form.get('inspector', '관리자')
-    
-    custom_date = request.form.get('inspection_date')
-    if custom_date:
-        try:
-            dt_obj = datetime.strptime(custom_date, '%Y-%m-%dT%H:%M')
-            now = dt_obj.strftime('%Y-%m-%d %H:%M:%S')
-        except:
+    try:
+        company = request.form.get('company', '아로마솔루션')
+        inspector = request.form.get('inspector', '관리자')
+        
+        custom_date = request.form.get('inspection_date')
+        if custom_date:
+            try:
+                dt_obj = datetime.strptime(custom_date, '%Y-%m-%dT%H:%M')
+                now = dt_obj.strftime('%Y-%m-%d %H:%M:%S')
+            except:
+                now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
+        else:
             now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
-    else:
-        now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
-    
-    item1_status = request.form.get('item1_status', '양호')
-    item1_remark = request.form.get('item1_remark', '')
-    item2_status = request.form.get('item2_status', '양호')
-    item2_remark = request.form.get('item2_remark', '')
-    item3_status = request.form.get('item3_status', '양호')
-    item3_remark = request.form.get('item3_remark', '')
-    item4_status = request.form.get('item4_status', '양호')
-    item4_remark = request.form.get('item4_remark', '')
-    
-    temp = request.form.get('temp', '20')
-    humidity = request.form.get('humidity', '50')
-    
-    new_row = pd.DataFrame([{
-        "점검일시": now,
-        "업체명": company,
-        "점검자": inspector,
-        "건축물구조_상태": item1_status,
-        "건축물구조_비고": item1_remark,
-        "소방환기_상태": item2_status,
-        "소방환기_비고": item2_remark,
-        "표지저장_상태": item3_status,
-        "표지저장_비고": item3_remark,
-        "온습도누출_상태": item4_status,
-        "온습도누출_비고": item4_remark,
-        "온도": temp,
-        "습도": humidity
-    }])
-    
-    df = pd.read_csv(DATA_FILE)
-    df = pd.concat([df, new_row], ignore_index=True)
-    df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
-    
+        
+        item1_status = request.form.get('item1_status', '양호')
+        item1_remark = request.form.get('item1_remark', '')
+        item2_status = request.form.get('item2_status', '양호')
+        item2_remark = request.form.get('item2_remark', '')
+        item3_status = request.form.get('item3_status', '양호')
+        item3_remark = request.form.get('item3_remark', '')
+        item4_status = request.form.get('item4_status', '양호')
+        item4_remark = request.form.get('item4_remark', '')
+        
+        temp = request.form.get('temp', '20')
+        humidity = request.form.get('humidity', '50')
+        
+        new_row = pd.DataFrame([{
+            "점검일시": now,
+            "업체명": company,
+            "점검자": inspector,
+            "건축물구조_상태": item1_status,
+            "건축물구조_비고": item1_remark,
+            "소방환기_상태": item2_status,
+            "소방환기_비고": item2_remark,
+            "표지저장_상태": item3_status,
+            "표지저장_비고": item3_remark,
+            "온습도누출_상태": item4_status,
+            "온습도누출_비고": item4_remark,
+            "온도": temp,
+            "습도": humidity
+        }])
+        
+        df = pd.read_csv(DATA_FILE)
+        df = pd.concat([df, new_row], ignore_index=True)
+        df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
+    except Exception as e:
+        print("Add error:", e)
+        import traceback
+        traceback.print_exc()
+        
     return redirect(url_for('admin'))
 
 @app.route('/admin_edit', methods=['POST'])
 def admin_edit():
     init_db()
-    idx = int(request.form.get('index', -1))
-    df = pd.read_csv(DATA_FILE)
-    
-    if 0 <= idx < len(df):
-        custom_date = request.form.get('inspection_date')
-        if custom_date:
-            try:
-                dt_obj = datetime.strptime(custom_date, '%Y-%m-%dT%H:%M')
-                df.loc[idx, '점검일시'] = dt_obj.strftime('%Y-%m-%d %H:%M:%S')
-            except:
-                pass
+    try:
+        idx = int(request.form.get('index', -1))
+        df = pd.read_csv(DATA_FILE)
+        
+        if 0 <= idx < len(df):
+            custom_date = request.form.get('inspection_date')
+            if custom_date:
+                try:
+                    dt_obj = datetime.strptime(custom_date, '%Y-%m-%dT%H:%M')
+                    df.at[idx, '점검일시'] = dt_obj.strftime('%Y-%m-%d %H:%M:%S')
+                except Exception as e:
+                    print("Date parse error:", e)
 
-        df.loc[idx, '업체명'] = request.form.get('company', df.loc[idx, '업체명'])
-        df.loc[idx, '점검자'] = request.form.get('inspector', df.loc[idx, '점검자'])
-        df.loc[idx, '건축물구조_상태'] = request.form.get('item1_status', '양호')
-        df.loc[idx, '건축물구조_비고'] = request.form.get('item1_remark', '')
-        df.loc[idx, '소방환기_상태'] = request.form.get('item2_status', '양호')
-        df.loc[idx, '소방환기_비고'] = request.form.get('item2_remark', '')
-        df.loc[idx, '표지저장_상태'] = request.form.get('item3_status', '양호')
-        df.loc[idx, '표지저장_비고'] = request.form.get('item3_remark', '')
-        df.loc[idx, '온습도누출_상태'] = request.form.get('item4_status', '양호')
-        df.loc[idx, '온습도누출_비고'] = request.form.get('item4_remark', '')
-        df.loc[idx, '온도'] = request.form.get('temp', '')
-        df.loc[idx, '습도'] = request.form.get('humidity', '')
-        df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
+            df.at[idx, '업체명'] = request.form.get('company', df.at[idx, '업체명'])
+            df.at[idx, '점검자'] = request.form.get('inspector', df.at[idx, '점검자'])
+            df.at[idx, '건축물구조_상태'] = request.form.get('item1_status', '양호')
+            df.at[idx, '건축물구조_비고'] = request.form.get('item1_remark', '')
+            df.at[idx, '소방환기_상태'] = request.form.get('item2_status', '양호')
+            df.at[idx, '소방환기_비고'] = request.form.get('item2_remark', '')
+            df.at[idx, '표지저장_상태'] = request.form.get('item3_status', '양호')
+            df.at[idx, '표지저장_비고'] = request.form.get('item3_remark', '')
+            df.at[idx, '온습도누출_상태'] = request.form.get('item4_status', '양호')
+            df.at[idx, '온습도누출_비고'] = request.form.get('item4_remark', '')
+            df.at[idx, '온도'] = request.form.get('temp', '')
+            df.at[idx, '습도'] = request.form.get('humidity', '')
+            df.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
+    except Exception as e:
+        print("Edit error:", e)
+        import traceback
+        traceback.print_exc()
         
     return redirect(url_for('admin'))
 
