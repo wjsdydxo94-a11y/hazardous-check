@@ -150,7 +150,7 @@ def generate_monthly_excel(company_name, target_month=None):
     wb.save(report_filename)
     return report_filename
 
-# 개별 상세 주간점검표 생성 (기준표 포함)
+# 개별 상세 주간점검표 생성 (결과와 특이사항 칸 분리)
 def generate_single_excel_by_index(idx):
     init_db()
     df_db = pd.read_csv(DATA_FILE).fillna('')
@@ -245,38 +245,38 @@ def generate_single_excel_by_index(idx):
         cell.alignment = align_center
         cell.border = thin_border
 
-    def format_cell_status(status_val, remark_val):
+    def get_status_only(status_val):
         s = str(status_val).strip()
-        r = str(remark_val).strip() if pd.notna(remark_val) and str(remark_val) != 'nan' else ''
-        res = "양호 (O)" if ('양호' in s or '정상' in s or 'O' in s) else "정비요함 (X)"
-        if r:
-            res += f"\n({r})"
-        return res
+        return "양호 (O)" if ('양호' in s or '정상' in s or 'O' in s) else "정비요함 (X)"
 
     items_data = [
         (
             "1. 건축물 구조 및 피뢰설비",
             "• 저장소 외벽, 지붕, 바닥, 출입문에 균열이나 변형이 있는지 육안으로 살핍니다.\n• 건물 최상단에 설치된 피뢰침(피뢰도체)과 건물 외벽을 따라 내려오는 접지선이 끊어지거나 부식되지 않았는지 확인합니다.",
             "• 건물 구조체에 누수나 심한 균열이 없습니다.\n• 피뢰침이 건물의 가장 높은 곳에 단단히 고정되어 있고, 접지선이 땅속까지 끊김 없이 안전하게 연결되어 있습니다.",
-            format_cell_status(row.get('건축물구조_상태', ''), row.get('건축물구조_비고', ''))
+            get_status_only(row.get('건축물구조_상태', '')),
+            str(row.get('건축물구조_비고', '')).strip() if pd.notna(row.get('건축물구조_비고')) and str(row.get('건축물구조_비고')) != 'nan' else ''
         ),
         (
             "2. 소방 및 환기·배출설비",
             "• 비치된 소화기의 압력계 바늘 위치를 확인합니다.\n• 환기팬(배기팬) 스위치를 켜서 정상적으로 회전하는지 확인합니다.",
             "• 소화기 압력계 바늘이 녹색(정상) 영역에 정확히 위치해 있습니다.\n• 환기팬 가동 시 이상 소음 없이 인화성 증기를 밖으로 원활하게 배출합니다.",
-            format_cell_status(row.get('소방환기_상태', ''), row.get('소방환기_비고', ''))
+            get_status_only(row.get('소방환기_상태', '')),
+            str(row.get('소방환기_비고', '')).strip() if pd.notna(row.get('소방환기_비고')) and str(row.get('소방환기_비고')) != 'nan' else ''
         ),
         (
             "3. 표지판 및 위험물 저장·취급",
             "• 출입구에 부착된 '위험물 옥내저장소', '화기엄금', '금연' 표지판이 잘 보이는지 확인합니다.\n• 저장소 내부 바닥과 통행로를 둘러봅니다.",
             "• 표지판이 훼손되거나 글씨가 지워지지 않고 선명하게 부착되어 있습니다.\n• 저장소 내부에 위험물 용기 외에 종이박스, 쓰레기 등 가연성 폐기물이 일절 없습니다.",
-            format_cell_status(row.get('표지저장_상태', ''), row.get('표지저장_비고', ''))
+            get_status_only(row.get('표지저장_상태', '')),
+            str(row.get('표지저장_비고', '')).strip() if pd.notna(row.get('표지저장_비고')) and str(row.get('표지저장_비고')) != 'nan' else ''
         ),
         (
             "4. 온습도 및 누출·비산 방지",
             "• 저장소 내부에 부착된 온·습도계 수치를 확인합니다.\n• 드럼 및 용기 하단부, 바닥 턱(방유제) 주변을 확인합니다.",
             "• 원료 변질을 유발하는 극단적인 고온·다습을 피해 적정 범위 내로 유지됩니다.\n• 바닥이나 용기 하단에 액체가 흘러내린 흔적(누유, 누수)이나 미세 누출이 전혀 없습니다.",
-            format_cell_status(row.get('온습도누출_상태', ''), row.get('온습도누출_비고', ''))
+            get_status_only(row.get('온습도누출_상태', '')),
+            str(row.get('온습도누출_비고', '')).strip() if pd.notna(row.get('온습도누출_비고')) and str(row.get('온습도누출_비고')) != 'nan' else ''
         )
     ]
 
@@ -286,13 +286,13 @@ def generate_single_excel_by_index(idx):
         c1 = ws.cell(row=idx, column=1, value=item[0])
         c2 = ws.cell(row=idx, column=2, value=item[1])
         c3 = ws.cell(row=idx, column=3, value=item[2])
-        c4 = ws.cell(row=idx, column=4, value=item[3])
-        c5 = ws.cell(row=idx, column=5, value="")
+        c4 = ws.cell(row=idx, column=4, value=item[3]) # 점검 결과 (상태만)
+        c5 = ws.cell(row=idx, column=5, value=item[4]) # 특이사항 및 조치내용 (비고만)
 
         for cell in [c1, c2, c3, c4, c5]:
             cell.font = font_body
             cell.border = thin_border
-            cell.alignment = align_center if cell != c2 and cell != c3 else align_left
+            cell.alignment = align_center if cell != c2 and cell != c3 and cell != c5 else align_left
             if idx % 2 == 1:
                 cell.fill = PatternFill(start_color="FAFAFA", end_color="FAFAFA", fill_type="solid")
 
