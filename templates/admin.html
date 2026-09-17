@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>위험물 저장소 정밀점검 관리 대시보드</title>
+    <title>위험물 정밀점검 관리 대시보드</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style> body { font-family: 'Pretendard', sans-serif; } </style>
@@ -14,7 +14,7 @@
         <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
             <div>
                 <h1 class="text-xl font-bold text-slate-900">위험물 저장소 정밀점검 관리 대시보드</h1>
-                <p class="text-xs text-slate-500 mt-0.5">소방 점검표 기준 일일 안전점검 내역 통합 조회</p>
+                <p class="text-xs text-slate-500 mt-0.5">일진소방 점검표 기준 통합 모니터링 시스템</p>
             </div>
             <div class="flex flex-wrap gap-2.5 items-center">
                 <select id="companySelect" onchange="filterTable()" class="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none">
@@ -37,13 +37,14 @@
                         <th class="py-3 px-3 border-r border-slate-700">점검일시</th>
                         <th class="py-3 px-3 border-r border-slate-700">업체명</th>
                         <th class="py-3 px-3 border-r border-slate-700">점검자</th>
-                        <th class="py-3 px-3 border-r border-slate-700">1. 교육 및 감독</th>
-                        <th class="py-3 px-3 border-r border-slate-700">2. 응급조치/연락</th>
-                        <th class="py-3 px-3 border-r border-slate-700">3. 시설 건전성</th>
-                        <th class="py-3 px-3 border-r border-slate-700">4. 방화환경/표지</th>
+                        <th class="py-3 px-3 border-r border-slate-700">1. 설비건전성</th>
+                        <th class="py-3 px-3 border-r border-slate-700">2. 누출관리</th>
+                        <th class="py-3 px-3 border-r border-slate-700">3. 방화환경</th>
+                        <th class="py-3 px-3 border-r border-slate-700">4. 종사자교육</th>
                         <th class="py-3 px-3 border-r border-slate-700">온도(℃)</th>
                         <th class="py-3 px-3 border-r border-slate-700">습도(%)</th>
-                        <th class="py-3 px-3">특이사항</th>
+                        <th class="py-3 px-3 border-r border-slate-700">보유재고</th>
+                        <th class="py-3 px-3">특이사항/조치내용</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody" class="divide-y divide-slate-200">
@@ -53,48 +54,49 @@
                         <td class="py-3 px-3 font-bold text-slate-800">{{ row.get('업체명', '-') }}</td>
                         <td class="py-3 px-3 text-slate-700">{{ row.get('점검자', '') }}</td>
                         
-                        <!-- 1. 교육 및 감독 -->
-                        {% set v1 = row.get('교육및감독', '') %}
+                        <!-- 1. 설비건전성 -->
+                        {% set v1 = row.get('설비건전성', '') %}
                         <td class="py-3 px-3">
                             {% if '양호' in v1|string or '정상' in v1|string or '이상없음' in v1|string %}
                                 <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
                             {% elif v1 and v1|string != 'nan' %}
-                                <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 불량</span>
+                                <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 정비요함</span>
                             {% endif %}
                         </td>
 
-                        <!-- 2. 응급조치 -->
-                        {% set v2 = row.get('응급조치', '') %}
+                        <!-- 2. 누출관리 -->
+                        {% set v2 = row.get('누출관리', '') %}
                         <td class="py-3 px-3">
                             {% if '양호' in v2|string or '정상' in v2|string or '이상없음' in v2|string %}
                                 <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
                             {% elif v2 and v2|string != 'nan' %}
-                                <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 불량</span>
+                                <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 정비요함</span>
                             {% endif %}
                         </td>
 
-                        <!-- 3. 시설 건전성 -->
-                        {% set v3 = row.get('시설건전성', '') %}
+                        <!-- 3. 방화환경 -->
+                        {% set v3 = row.get('방화환경', '') %}
                         <td class="py-3 px-3">
                             {% if '양호' in v3|string or '정상' in v3|string or '이상없음' in v3|string %}
                                 <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
                             {% elif v3 and v3|string != 'nan' %}
-                                <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 불량</span>
+                                <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 정비요함</span>
                             {% endif %}
                         </td>
 
-                        <!-- 4. 방화환경 -->
-                        {% set v4 = row.get('방화환경', '') %}
+                        <!-- 4. 종사자교육 -->
+                        {% set v4 = row.get('종사자교육', '') %}
                         <td class="py-3 px-3">
                             {% if '양호' in v4|string or '정상' in v4|string or '이상없음' in v4|string %}
                                 <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">✔ 양호</span>
                             {% elif v4 and v4|string != 'nan' %}
-                                <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 불량</span>
+                                <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-bold">✘ 정비요함</span>
                             {% endif %}
                         </td>
 
                         <td class="py-3 px-3 text-slate-600">{{ row.get('온도', '') }}</td>
                         <td class="py-3 px-3 text-slate-600">{{ row.get('습도', '') }}</td>
+                        <td class="py-3 px-3 font-semibold text-blue-600">{{ row.get('재고량', '-') }}</td>
                         
                         {% set note = row.get('특이사항', '') %}
                         <td class="py-3 px-3 text-left text-slate-700">
